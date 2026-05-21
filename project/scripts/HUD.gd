@@ -7,6 +7,7 @@ signal return_to_menu_requested
 const UpgradeIconScript = preload("res://scripts/UpgradeIcon.gd")
 const MENU_ATLAS_PATH = "res://assets/menu/western_menu_atlas.png"
 const PAUSE_MENU_SCENE = preload("res://scenes/ui/pause_menu.tscn")
+const LEVEL_UP_MENU_SCENE = preload("res://scenes/ui/level_up_menu.tscn")
 
 var health_bar
 var xp_bar
@@ -566,93 +567,26 @@ func _on_return_to_menu_pressed():
 	return_to_menu_requested.emit()
 
 func _build_level_layer():
-	level_layer = Control.new()
-	level_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	level_layer = LEVEL_UP_MENU_SCENE.instantiate()
 	level_layer.visible = false
 	level_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(level_layer)
 
-	var shade = ColorRect.new()
-	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(0, 0, 0, 0.58)
-	level_layer.add_child(shade)
-
-	var panel = PanelContainer.new()
+	var panel = level_layer.get_node("Panel")
 	panel.add_theme_stylebox_override("panel", _panel_style(Color("#2d2017")))
-	panel.anchor_left = 0.5
-	panel.anchor_top = 0.5
-	panel.anchor_right = 0.5
-	panel.anchor_bottom = 0.5
-	panel.offset_left = -360
-	panel.offset_top = -230
-	panel.offset_right = 360
-	panel.offset_bottom = 230
-	level_layer.add_child(panel)
-
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 22)
-	margin.add_theme_constant_override("margin_top", 20)
-	margin.add_theme_constant_override("margin_right", 22)
-	margin.add_theme_constant_override("margin_bottom", 20)
-	panel.add_child(margin)
-
-	var box = VBoxContainer.new()
-	box.add_theme_constant_override("separation", 14)
-	margin.add_child(box)
-
-	level_title_label = Label.new()
+	level_title_label = level_layer.get_node("Panel/Margin/Box/Title")
 	level_title_label.text = _tr("choose_upgrade")
-	level_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	level_title_label.add_theme_font_size_override("font_size", 28)
-	box.add_child(level_title_label)
 
+	choice_buttons.clear()
+	choice_cards.clear()
 	for i in range(3):
-		var button = Button.new()
-		button.process_mode = Node.PROCESS_MODE_ALWAYS
-		button.custom_minimum_size = Vector2(640, 100)
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		var button = level_layer.get_node("Panel/Margin/Box/Choice%d" % i)
 		button.pressed.connect(_on_choice_pressed.bind(i))
 		choice_buttons.append(button)
-		box.add_child(button)
-
-		var row = HBoxContainer.new()
-		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.set_anchors_preset(Control.PRESET_FULL_RECT)
-		row.offset_left = 14
-		row.offset_top = 10
-		row.offset_right = -14
-		row.offset_bottom = -10
-		row.add_theme_constant_override("separation", 12)
-		button.add_child(row)
-
-		var icon = Control.new()
-		icon.set_script(UpgradeIconScript)
-		icon.custom_minimum_size = Vector2(64, 64)
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(icon)
-
-		var labels = VBoxContainer.new()
-		labels.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		labels.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		labels.add_theme_constant_override("separation", 5)
-		row.add_child(labels)
-
-		var choice_title = Label.new()
-		choice_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		choice_title.add_theme_font_size_override("font_size", 18)
-		labels.add_child(choice_title)
-
-		var choice_desc = Label.new()
-		choice_desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		choice_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		choice_desc.add_theme_font_size_override("font_size", 13)
-		choice_desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		labels.add_child(choice_desc)
-
 		choice_cards.append({
-			"icon": icon,
-			"title": choice_title,
-			"desc": choice_desc
+			"icon": button.get_node("Row/Icon"),
+			"title": button.get_node("Row/Labels/ChoiceTitle"),
+			"desc": button.get_node("Row/Labels/ChoiceDesc")
 		})
 
 func _build_game_over_layer():
