@@ -19,6 +19,8 @@ script = ExtResource("2_floor")
 
 [node name="WorldItems" type="Node2D" parent="World"]
 
+[node name="Obstacles" type="Node2D" parent="World"]
+
 [node name="Enemies" type="Node2D" parent="World"]
 
 [node name="Projectiles" type="Node2D" parent="World"]

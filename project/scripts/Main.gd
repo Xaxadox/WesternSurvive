@@ -5,6 +5,7 @@ const BULLET_SCENE_PATH = "res://scenes/bullet.tscn"
 const XP_PICKUP_SCENE_PATH = "res://scenes/xp_pickup.tscn"
 const PLAYER_SCENE_PATH = "res://scenes/player.tscn"
 const WORLD_ITEM_SCENE_PATH = "res://scenes/world_item.tscn"
+const STAGE_OBSTACLE_SCENE_PATH = "res://scenes/stage_obstacle.tscn"
 const SpatialUtils = preload("res://scripts/SpatialUtils.gd")
 const GameData = preload("res://scripts/GameData.gd")
 const WeaponFire = preload("res://scripts/weapons/WeaponFire.gd")
@@ -46,6 +47,7 @@ const SOFT_ENEMY_CAP = 145
 @onready var projectiles = $World/Projectiles
 @onready var pickups = $World/Pickups
 @onready var world_items = $World/WorldItems
+@onready var obstacles = $World/Obstacles
 @onready var group_camera = $World/GroupCamera
 @onready var hud = $HUD
 @onready var mine_darkness_layer = $MineDarkness
@@ -57,6 +59,7 @@ var bullet_scene: PackedScene
 var xp_pickup_scene: PackedScene
 var player_scene: PackedScene
 var world_item_scene: PackedScene
+var stage_obstacle_scene: PackedScene
 var rng = RandomNumberGenerator.new()
 
 var characters = GameData.characters()
@@ -216,6 +219,7 @@ func _load_scene_dependencies():
 	xp_pickup_scene = load(XP_PICKUP_SCENE_PATH) as PackedScene
 	player_scene = load(PLAYER_SCENE_PATH) as PackedScene
 	world_item_scene = load(WORLD_ITEM_SCENE_PATH) as PackedScene
+	stage_obstacle_scene = load(STAGE_OBSTACLE_SCENE_PATH) as PackedScene
 
 func _process(delta):
 	if get_tree().paused:
@@ -285,6 +289,7 @@ func _return_to_start_menu():
 	_clear_children(projectiles)
 	_clear_children(pickups)
 	_clear_children(world_items)
+	_clear_children(obstacles)
 	_reset_world_to_menu()
 	_transition_music_to(MENU_STAGE_ID)
 	hud.show_pause(false)
@@ -321,10 +326,12 @@ func _start_run(stage_id, character_id, player_count = 1):
 	_clear_children(projectiles)
 	_clear_children(pickups)
 	_clear_children(world_items)
+	_clear_children(obstacles)
 
 	_setup_players(character_id, active_player_count)
 	_record_played_menu_info(selected_stage.get("id", ""), _party_character_ids())
 	floor.set_stage(selected_stage)
+	_build_stage_obstacles()
 	_configure_stage_mechanics()
 	_transition_music_to(selected_stage.get("id", "ghost_town"))
 	hud.hide_start_menu()
@@ -416,8 +423,75 @@ func _player_spawn_position(index, count):
 	return Vector2.RIGHT.rotated(angle) * 42.0
 
 func _clear_children(node):
+	if node == null:
+		return
 	for child in node.get_children():
 		child.queue_free()
+
+func _build_stage_obstacles():
+	_clear_children(obstacles)
+	if obstacles == null or stage_obstacle_scene == null:
+		return
+	if selected_stage.get("id", "") == "mine":
+		return
+
+	var stage_id = selected_stage.get("id", "ghost_town")
+	var count = _stage_obstacle_count(stage_id)
+	for i in range(count):
+		var data = _stage_obstacle_data(stage_id, i, count)
+		if data.is_empty():
+			continue
+		var obstacle = stage_obstacle_scene.instantiate()
+		obstacles.add_child(obstacle)
+		obstacle.global_position = data.get("position", Vector2.ZERO)
+		if obstacle.has_method("setup"):
+			obstacle.setup(data)
+
+func _stage_obstacle_count(stage_id):
+	match stage_id:
+		"canyon":
+			return 11
+		"broken_fort":
+			return 14
+		"bonus":
+			return 13
+		_:
+			return 15
+
+func _stage_obstacle_data(stage_id, index, count):
+	var base_angle = float(index) / float(maxi(count, 1)) * TAU
+	var hash = _stable_stage_hash(stage_id, index)
+	var distance = 420.0 + float(hash % 5) * 190.0 + float(index % 3) * 70.0
+	var position = Vector2.RIGHT.rotated(base_angle + float(hash % 17) * 0.025) * distance
+	if position.length() < 320.0:
+		position = position.normalized() * 320.0
+
+	var kind = "building"
+	var size = Vector2(120, 92)
+	match stage_id:
+		"canyon":
+			kind = "boulder" if index % 3 != 0 else "cactus"
+			size = Vector2(86, 74) if kind == "boulder" else Vector2(70, 92)
+		"broken_fort":
+			kind = ["building", "fence", "wagon"][index % 3]
+			size = Vector2(128, 86) if kind == "building" else Vector2(118, 62)
+		"bonus":
+			kind = ["building", "wagon", "boulder"][index % 3]
+			size = Vector2(118, 82)
+		_:
+			kind = ["building", "wagon", "fence", "boulder"][index % 4]
+			size = Vector2(132, 92) if kind == "building" else Vector2(108, 70)
+
+	return {
+		"kind": kind,
+		"position": position,
+		"size": size,
+		"color": selected_stage.get("accent", Color("#7a4a27")),
+		"detail": Color("#3b2417")
+	}
+
+func _stable_stage_hash(stage_id, index):
+	return int(abs(sin(float(stage_id.hash() + index * 97) * 0.01357)) * 100000.0)
 
 func _reset_run_buffs():
 	buff_levels.clear()
@@ -533,6 +607,20 @@ func _stage_safe_position(position):
 func _stage_position_walkable(position):
 	if selected_stage.get("id", "") == "mine" and floor != null and floor.has_method("is_mine_walkable"):
 		return floor.is_mine_walkable(position)
+	return _position_clear_of_obstacles(position, 58.0)
+
+func _position_clear_of_obstacles(position, padding):
+	if obstacles == null:
+		return true
+	for obstacle in obstacles.get_children():
+		if not is_instance_valid(obstacle):
+			continue
+		var size = obstacle.get("obstacle_size")
+		if typeof(size) != TYPE_VECTOR2:
+			size = Vector2(96, 72)
+		var rect = Rect2(obstacle.global_position - size * 0.5 - Vector2.ONE * padding, size + Vector2.ONE * padding * 2.0)
+		if rect.has_point(position):
+			return false
 	return true
 
 func _enforce_stage_layout():

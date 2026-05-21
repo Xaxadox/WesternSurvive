@@ -60,8 +60,9 @@ func _draw():
 	for y in range(start_y, end_y + tile_size, tile_size):
 		draw_line(Vector2(start_x, y), Vector2(end_x, y), grid_color, 1.0)
 
-	for x in range(start_x, end_x + tile_size * 2, tile_size * 2):
-		for y in range(start_y, end_y + tile_size * 2, tile_size * 2):
+	var prop_step = tile_size * 3
+	for x in range(start_x, end_x + prop_step, prop_step):
+		for y in range(start_y, end_y + prop_step, prop_step):
 			var hash = _cell_hash(x, y) % 23
 			var offset = Vector2((hash % 5) * 9 - 18, (hash % 7) * 7 - 21)
 			_draw_stage_prop(Vector2(x, y) + offset, hash)
@@ -237,6 +238,8 @@ func _draw_stage_prop(pos, hash):
 		"broken_fort":
 			if hash == 1:
 				_draw_fort_wall(pos)
+			elif hash == 3:
+				_draw_small_building(pos)
 			elif hash == 4 or hash == 11:
 				_draw_crate(pos)
 			elif hash == 8:
@@ -258,6 +261,8 @@ func _draw_stage_prop(pos, hash):
 		_:
 			if hash == 1:
 				_draw_cactus(pos)
+			elif hash == 3:
+				_draw_small_building(pos)
 			elif hash == 4:
 				_draw_rock(pos)
 			elif hash == 8:
@@ -301,6 +306,13 @@ func _draw_fort_wall(pos):
 	var wood = Color("#5c3d27")
 	draw_rect(Rect2(pos + Vector2(-22, -9), Vector2(44, 18)), wood)
 	draw_line(pos + Vector2(-20, 0), pos + Vector2(20, 0), Color("#3e281a"), 2.0)
+
+func _draw_small_building(pos):
+	var wood = Color("#6d4228")
+	var dark = Color("#3b2417")
+	draw_rect(Rect2(pos + Vector2(-28, -18), Vector2(56, 36)), wood)
+	draw_rect(Rect2(pos + Vector2(-20, -13), Vector2(40, 8)), dark)
+	draw_rect(Rect2(pos + Vector2(-5, 2), Vector2(10, 16)), dark)
 
 func _draw_crate(pos):
 	var wood = Color("#7b4d2c")
