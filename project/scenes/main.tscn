@@ -1,0 +1,43 @@
+[gd_scene load_steps=7 format=3 uid="uid://westernsurvive_main"]
+
+[ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/DesertFloor.gd" id="2_floor"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="3_player"]
+[ext_resource type="Script" path="res://scripts/HUD.gd" id="4_hud"]
+[ext_resource type="Script" path="res://scripts/CodeMusic.gd" id="5_music"]
+[ext_resource type="Script" path="res://scripts/MineDarkness.gd" id="6_darkness"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="DesertFloor" type="Node2D" parent="World"]
+script = ExtResource("2_floor")
+
+[node name="Pickups" type="Node2D" parent="World"]
+
+[node name="WorldItems" type="Node2D" parent="World"]
+
+[node name="Enemies" type="Node2D" parent="World"]
+
+[node name="Projectiles" type="Node2D" parent="World"]
+
+[node name="GroupCamera" type="Camera2D" parent="World"]
+position_smoothing_enabled = true
+position_smoothing_speed = 6.0
+
+[node name="Player" parent="World" instance=ExtResource("3_player")]
+
+[node name="MineDarkness" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="Fog" type="Control" parent="MineDarkness"]
+script = ExtResource("6_darkness")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 2
+script = ExtResource("4_hud")
+
+[node name="CodeMusic" type="Node" parent="."]
+script = ExtResource("5_music")

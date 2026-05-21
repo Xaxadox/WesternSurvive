@@ -1,0 +1,21 @@
+# Godot local/imported state
+.godot/
+project/.godot/
+*.tmp
+*.translation
+
+# Local engine, caches, and generated builds
+engine/
+cache/
+builds/
+
+# Godot export credentials may contain machine-specific paths or signing data
+export_presets.cfg
+project/export_presets.cfg
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
