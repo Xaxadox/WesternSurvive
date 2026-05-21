@@ -1,92 +1,61 @@
 # Western Survive
 
-**Western Survive** e um prototipo 2D feito em Godot, inspirado em jogos de arena survival, com tema de velho oeste, progressao por upgrades, multiplayer local e fases com regras proprias.
+**Western Survive** is a 2D prototype made in Godot, inspired by arena survival games, featuring a Wild West theme, upgrade progression, local multiplayer, and stages with their own rules.
 
-O projeto foi organizado para subir leve no GitHub: entram apenas os arquivos do jogo, scripts, cenas, shaders, testes e documentacao. Builds exportadas, cache local e a engine portatil ficam fora do repositorio.
+The project was organized to be lightweight on GitHub: only game files, scripts, scenes, shaders, tests, and documentation are included. Exported builds, local cache, and the portable engine are kept out of the repository.
 
-## Destaques
+## Features
 
-- Arena survival 2D com ambientacao western.
-- 4 fases iniciais: Cidade Fantasma, Forte Quebrado, Canyon Vermelho e Mina Abandonada.
-- 1 fase bonus: Trilho do Eclipse.
-- 4 personagens jogaveis: Pistoleiro, Xerife, Cacadora e Curandeiro.
-- 8 armas base e 4 armas secretas desbloqueaveis.
-- Sistema de upgrades ate nivel 5 por arma.
-- Multiplayer local para 1 a 4 jogadores.
-- Itens de cenario, como alimentos e bombas.
-- Mina Abandonada com visao limitada e lampioes.
-- Musica gerada por codigo, sem arquivos de audio externos.
-- Menu com volume, musica, resolucao, tela cheia, idioma e quantidade de jogadores.
+- 2D arena survival with a western setting.
+- 4 starting stages: Ghost Town, Broken Fort, Red Canyon, and Abandoned Mine.
+- 1 bonus stage: Eclipse Rail.
+- 4 playable characters: Gunslinger, Sheriff, Bounty Hunter, and Healer.
+- 8 base weapons and 4 unlockable secret weapons.
+- Upgrade system up to level 5 per weapon.
+- Local multiplayer for 1 to 4 players.
+- Scenario items, such as food and bombs.
+- Abandoned Mine with limited vision and lanterns.
+- Code-generated music, with no external audio files.
+- Menu with master volume, music, resolution, fullscreen, language, and player count.
 
-## Desbloqueios
+## Unlocks
 
-| Condicao | Desbloqueio |
+| Condition | Unlock |
 | --- | --- |
-| Revolver nivel 5 na Cidade Fantasma | Revolver Dourado |
-| Espingarda nivel 5 no Forte Quebrado | Escopeta de Carruagem |
-| Rifle nivel 5 no Canyon Vermelho | Lanca-Trilhos |
-| Garrafa de Fogo nivel 5 na Mina Abandonada | Lampiao Fantasma |
-| Todas as 4 armas secretas liberadas | Trilho do Eclipse |
+| Level 5 Revolver in Ghost Town | Golden Revolver |
+| Level 5 Shotgun in Broken Fort | Coach Gun |
+| Level 5 Rifle in Red Canyon | Rail Spike |
+| Level 5 Fire Bottle in Abandoned Mine | Ghost Lantern |
+| All 4 secret weapons unlocked | Eclipse Rail |
 
-## Sinergias
+## Synergies
 
-| Personagem | Sinergia |
+| Character | Synergy |
 | --- | --- |
-| Pistoleiro | Revolver Dourado |
-| Xerife | Escopeta de Carruagem |
-| Cacadora | Lanca-Trilhos, com rifle inicial |
-| Curandeiro | Lampiao Fantasma |
+| Gunslinger | Golden Revolver |
+| Sheriff | Coach Gun |
+| Bounty Hunter | Rail Spike, with starting rifle |
+| Healer | Ghost Lantern |
 
-## Controles
+## Controls
 
-- Jogador 1: WASD ou setas.
-- Jogador 2: IJKL.
-- Jogador 3: TFGH.
-- Jogador 4: teclado numerico 8456.
-- Controle: analogico esquerdo, um controle por jogador.
-- Jogador 1 mira com o mouse.
-- Esc pausa o jogo.
+- Player 1: WASD or arrow keys.
+- Player 2: IJKL.
+- Player 3: TFGH.
+- Player 4: Numpad 8456.
+- Controller: Left analog stick, one controller per player.
+- Player 1 aims with the mouse.
+- Esc pauses the game.
 
-As armas base do jogador 1 disparam na direcao do ponteiro do mouse. Jogadores extras miram pela direcao de movimento ou controle. Armas secretas usam mira automatica no inimigo mais proximo.
+Base weapons for Player 1 fire in the direction of the mouse pointer. Extra players aim based on their movement or controller direction. Secret weapons use auto-aim on the nearest enemy.
 
-No multiplayer local, o grupo compartilha XP, upgrades, armas e desbloqueios. A rodada termina quando todos os jogadores caem.
+In local multiplayer, the group shares XP, upgrades, weapons, and unlocks. The run ends when all players fall.
 
-## Como abrir no Godot
+## How to open in Godot
 
-1. Instale Godot 4.x.
-2. Abra a pasta `project/`.
-3. Rode a cena principal:
+1. Install Godot 4.x.
+2. Open the `project/` folder.
+3. Run the main scene:
 
 ```text
 res://scenes/main.tscn
-```
-
-## Estrutura do repositorio
-
-```text
-WesternSurvive/
-  project/   Projeto Godot versionado
-  docs/      Documentacao auxiliar
-  tools/     Scripts e utilitarios de apoio
-  *.ps1      Launchers e scripts locais
-```
-
-Pastas que existem no ambiente local, mas nao entram no Git:
-
-```text
-builds/   Builds exportadas
-cache/    Cache, preferencias e progresso local
-engine/   Godot portatil e arquivos pesados da engine
-```
-
-## Smoke test
-
-Com a engine instalada localmente em `engine/`, rode:
-
-```powershell
-F:\WesternSurvive\engine\Godot_v4.6.2-stable_win64_console.exe --headless --path F:\WesternSurvive\project --quit-after 4 --fixed-fps 60
-```
-
-## Status
-
-Este e um prototipo jogavel em desenvolvimento. O foco atual e validar gameplay, progressao, fases, armas e multiplayer local antes de polir assets finais.
