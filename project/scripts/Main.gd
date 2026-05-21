@@ -17,6 +17,7 @@ const MUSIC_STAGE_FADE_IN = 0.62
 const MUSIC_GAME_OVER_SILENCE = 1.2
 const MUSIC_GAME_OVER_FADE_IN = 1.6
 const MAX_WEAPON_LEVEL = 5
+const MAX_ACTIVE_WEAPONS = 4
 const BASE_WEAPONS = [
 	"revolver",
 	"shotgun",
@@ -34,6 +35,7 @@ const SECRET_WEAPONS = [
 	"ghost_lantern"
 ]
 const MAX_BUFF_LEVEL = 5
+const MAX_ACTIVE_BUFFS = 4
 const BASE_ENEMY_CAP = 185
 const SOFT_ENEMY_CAP = 145
 
@@ -482,8 +484,8 @@ func _spawn_world_item(initial):
 		item.setup({
 			"kind": _roll_world_item_kind(),
 			"heal": 10 + int(selected_stage.get("id", "") == "ghost_town") * 2,
-			"damage": 32 + int(selected_stage.get("id", "") == "broken_fort") * 6,
-			"radius": 96.0,
+			"damage": 52 + int(selected_stage.get("id", "") == "broken_fort") * 10,
+			"radius": 142.0,
 			"fuse": 2.75
 		}, players)
 
@@ -757,6 +759,7 @@ func _try_level_up():
 
 func _roll_upgrade_choices():
 	var pool = []
+	var weapon_slots_full = weapon_levels.size() >= MAX_ACTIVE_WEAPONS
 	for weapon_id in _available_weapon_ids():
 		if weapon_levels.has(weapon_id):
 			if int(weapon_levels[weapon_id]) < MAX_WEAPON_LEVEL:
@@ -768,7 +771,7 @@ func _roll_upgrade_choices():
 					"desc": _weapon_upgrade_description(weapon_id, next_level),
 					"icon": weapons[weapon_id].get("icon", weapon_id)
 				})
-		else:
+		elif not weapon_slots_full:
 			pool.append({
 				"type": "weapon",
 				"id": weapon_id,
@@ -777,8 +780,11 @@ func _roll_upgrade_choices():
 				"icon": weapons[weapon_id].get("icon", weapon_id)
 			})
 
+	var buff_slots_full = buff_levels.size() >= MAX_ACTIVE_BUFFS
 	for upgrade in stat_upgrades:
 		var buff_id = upgrade.get("id", "")
+		if not buff_levels.has(buff_id) and buff_slots_full:
+			continue
 		var next_level = int(buff_levels.get(buff_id, 0)) + 1
 		if next_level <= MAX_BUFF_LEVEL:
 			pool.append({
@@ -1079,6 +1085,8 @@ func _upgrade_buff(buff_id):
 	var buff = _buff_by_id(buff_id)
 	if buff.is_empty():
 		return
+	if not buff_levels.has(buff_id) and buff_levels.size() >= MAX_ACTIVE_BUFFS:
+		return
 
 	var next_level = mini(int(buff_levels.get(buff_id, 0)) + 1, MAX_BUFF_LEVEL)
 	buff_levels[buff_id] = next_level
@@ -1145,6 +1153,8 @@ func _upgrade_weapon(weapon_id):
 
 func _add_weapon(weapon_id, silent):
 	if not weapons.has(weapon_id):
+		return
+	if not weapon_levels.has(weapon_id) and weapon_levels.size() >= MAX_ACTIVE_WEAPONS:
 		return
 
 	weapon_levels[weapon_id] = 1
