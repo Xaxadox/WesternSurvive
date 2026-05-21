@@ -1,5 +1,7 @@
 extends Node2D
 
+const SpatialUtils = preload("res://scripts/SpatialUtils.gd")
+
 var kind = "food"
 var players = []
 var heal_amount = 24
@@ -38,7 +40,7 @@ func _physics_process(delta):
 
 func _process_food():
 	for current_player in players:
-		if not _player_alive(current_player):
+		if not SpatialUtils.is_alive(current_player):
 			continue
 		if global_position.distance_to(current_player.global_position) <= 28.0:
 			if int(current_player.health) >= int(current_player.max_health):
@@ -62,15 +64,10 @@ func _process_bomb(delta):
 		queue_redraw()
 
 func _near_actor(radius):
-	for current_player in players:
-		if _player_alive(current_player) and global_position.distance_to(current_player.global_position) <= radius:
-			return true
-
-	for enemy in _enemy_nodes():
-		if is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= radius:
-			return true
-
-	return false
+	return (
+		SpatialUtils.has_alive_in_radius(global_position, players, radius)
+		or SpatialUtils.has_valid_in_radius(global_position, _enemy_nodes(), radius)
+	)
 
 func _explode():
 	if exploded:
@@ -79,14 +76,11 @@ func _explode():
 	exploded = true
 	explosion_left = 0.18
 
-	for current_player in players:
-		if _player_alive(current_player) and global_position.distance_to(current_player.global_position) <= explosion_radius:
-			current_player.damage(damage_amount)
+	for current_player in SpatialUtils.alive_in_radius(global_position, players, explosion_radius):
+		current_player.damage(damage_amount)
 
-	for enemy in _enemy_nodes():
-		if not is_instance_valid(enemy):
-			continue
-		if global_position.distance_to(enemy.global_position) <= explosion_radius and enemy.has_method("hurt"):
+	for enemy in SpatialUtils.valid_in_radius(global_position, _enemy_nodes(), explosion_radius):
+		if enemy.has_method("hurt"):
 			enemy.hurt(damage_amount, global_position)
 
 	queue_redraw()
@@ -98,9 +92,6 @@ func _enemy_nodes():
 		if enemy_root != null:
 			return enemy_root.get_children()
 	return get_tree().get_nodes_in_group("enemies")
-
-func _player_alive(current_player):
-	return is_instance_valid(current_player) and bool(current_player.alive)
 
 func _draw():
 	if exploded:

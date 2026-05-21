@@ -5,6 +5,7 @@ const BULLET_SCENE_PATH = "res://scenes/bullet.tscn"
 const XP_PICKUP_SCENE_PATH = "res://scenes/xp_pickup.tscn"
 const PLAYER_SCENE_PATH = "res://scenes/player.tscn"
 const WORLD_ITEM_SCENE_PATH = "res://scenes/world_item.tscn"
+const SpatialUtils = preload("res://scripts/SpatialUtils.gd")
 
 const SAVE_DIR = "F:/WesternSurvive/cache"
 const SAVE_PATH = "F:/WesternSurvive/cache/progress.json"
@@ -1224,18 +1225,7 @@ func _weapon_direction(weapon_id, shooter):
 	return direction
 
 func _nearest_enemy(source_position):
-	var best = null
-	var best_distance = INF
-
-	for enemy in enemies.get_children():
-		if not is_instance_valid(enemy):
-			continue
-		var distance = source_position.distance_squared_to(enemy.global_position)
-		if distance < best_distance:
-			best_distance = distance
-			best = enemy
-
-	return best
+	return SpatialUtils.nearest_valid(source_position, enemies.get_children())
 
 func _on_enemy_died(enemy):
 	kills += 1

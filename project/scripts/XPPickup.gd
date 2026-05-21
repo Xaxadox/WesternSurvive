@@ -1,5 +1,7 @@
 extends Area2D
 
+const SpatialUtils = preload("res://scripts/SpatialUtils.gd")
+
 var value = 1
 var player = null
 var players = []
@@ -32,21 +34,7 @@ func _physics_process(delta):
 		queue_free()
 
 func _nearest_player():
-	var best = null
-	var best_distance = INF
-
-	for candidate in players:
-		if not is_instance_valid(candidate):
-			continue
-		if not bool(candidate.alive):
-			continue
-
-		var distance = global_position.distance_squared_to(candidate.global_position)
-		if distance < best_distance:
-			best_distance = distance
-			best = candidate
-
-	return best
+	return SpatialUtils.nearest_alive(global_position, players)
 
 func _draw():
 	var points = PackedVector2Array([

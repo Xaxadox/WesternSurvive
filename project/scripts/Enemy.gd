@@ -2,6 +2,8 @@ extends CharacterBody2D
 
 signal died(enemy)
 
+const SpatialUtils = preload("res://scripts/SpatialUtils.gd")
+
 var target = null
 var targets = []
 var max_health = 12
@@ -96,23 +98,7 @@ func _apply_player_soft_collision(current_target):
 	global_position += direction * (minimum_distance - distance)
 
 func _nearest_target():
-	var best = null
-	var best_distance = INF
-
-	for candidate in targets:
-		if not is_instance_valid(candidate):
-			continue
-		if not bool(candidate.alive):
-			continue
-
-		var distance = global_position.distance_squared_to(candidate.global_position)
-		if distance < best_distance:
-			best_distance = distance
-			best = candidate
-
-	if best != null:
-		return best
-	return target
+	return SpatialUtils.nearest_alive(global_position, targets, target)
 
 func _draw():
 	var hp_ratio = clamp(float(health) / float(max_health), 0.0, 1.0)
