@@ -2,6 +2,7 @@ extends Node2D
 
 const MINE_CELL_SIZE = 288
 const MINE_CORRIDOR_HALF_WIDTH = 36.0
+const MINE_WALKABLE_PADDING = 20.0
 
 var player = null
 var tile_size = 96
@@ -130,47 +131,66 @@ func mine_safe_position(position):
 	for cell_x in range(cell.x - 2, cell.x + 3):
 		for cell_y in range(cell.y - 2, cell.y + 3):
 			var room = _mine_room_center(cell_x, cell_y)
-			best_distance = _consider_mine_candidate(position, room, best_distance)
-			if position.distance_squared_to(room) <= best_distance:
-				best = room
+			var candidate = _safe_point_in_circle(position, room, _mine_room_radius(cell_x, cell_y) + MINE_WALKABLE_PADDING)
+			var distance = position.distance_squared_to(candidate)
+			if distance < best_distance:
+				best_distance = distance
+				best = candidate
 
 			var right = _mine_room_center(cell_x + 1, cell_y)
-			var point = _closest_point_on_segment(position, room, right)
-			best_distance = _consider_mine_candidate(position, point, best_distance)
-			if position.distance_squared_to(point) <= best_distance:
-				best = point
+			candidate = _safe_point_in_corridor(position, room, right, MINE_CORRIDOR_HALF_WIDTH + MINE_WALKABLE_PADDING)
+			distance = position.distance_squared_to(candidate)
+			if distance < best_distance:
+				best_distance = distance
+				best = candidate
 
 			if _mine_has_vertical_connection(cell_x, cell_y):
 				var down = _mine_room_center(cell_x, cell_y + 1)
-				point = _closest_point_on_segment(position, room, down)
-				best_distance = _consider_mine_candidate(position, point, best_distance)
-				if position.distance_squared_to(point) <= best_distance:
-					best = point
+				candidate = _safe_point_in_corridor(position, room, down, MINE_CORRIDOR_HALF_WIDTH + MINE_WALKABLE_PADDING)
+				distance = position.distance_squared_to(candidate)
+				if distance < best_distance:
+					best_distance = distance
+					best = candidate
 
 	return best
-
-func _consider_mine_candidate(source, candidate, best_distance):
-	var distance = source.distance_squared_to(candidate)
-	return minf(best_distance, distance)
 
 func _mine_walkable_at(position):
 	var cell = _mine_cell(position)
 	for cell_x in range(cell.x - 1, cell.x + 2):
 		for cell_y in range(cell.y - 1, cell.y + 2):
 			var room = _mine_room_center(cell_x, cell_y)
-			if position.distance_to(room) <= _mine_room_radius(cell_x, cell_y):
+			if position.distance_to(room) <= _mine_room_radius(cell_x, cell_y) + MINE_WALKABLE_PADDING:
 				return true
 
 			var right = _mine_room_center(cell_x + 1, cell_y)
-			if _distance_to_segment(position, room, right) <= MINE_CORRIDOR_HALF_WIDTH:
+			if _distance_to_segment(position, room, right) <= MINE_CORRIDOR_HALF_WIDTH + MINE_WALKABLE_PADDING:
 				return true
 
 			if _mine_has_vertical_connection(cell_x, cell_y):
 				var down = _mine_room_center(cell_x, cell_y + 1)
-				if _distance_to_segment(position, room, down) <= MINE_CORRIDOR_HALF_WIDTH:
+				if _distance_to_segment(position, room, down) <= MINE_CORRIDOR_HALF_WIDTH + MINE_WALKABLE_PADDING:
 					return true
 
 	return false
+
+func _safe_point_in_circle(point, center, radius):
+	var offset = point - center
+	var distance = offset.length()
+	if distance <= radius:
+		return point
+	if distance <= 0.001:
+		return center
+	return center + offset / distance * radius
+
+func _safe_point_in_corridor(point, a, b, half_width):
+	var closest = _closest_point_on_segment(point, a, b)
+	var offset = point - closest
+	var distance = offset.length()
+	if distance <= half_width:
+		return point
+	if distance <= 0.001:
+		return closest
+	return closest + offset / distance * half_width
 
 func _mine_cell(position):
 	return Vector2i(int(floor(position.x / float(MINE_CELL_SIZE))), int(floor(position.y / float(MINE_CELL_SIZE))))

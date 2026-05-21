@@ -492,6 +492,8 @@ func _ready():
 	player.health_changed.connect(_on_player_health_changed)
 	player.died.connect(_on_player_died)
 	hud.settings_changed.connect(_on_settings_changed)
+	hud.resume_requested.connect(_on_pause_resume_requested)
+	hud.return_to_menu_requested.connect(_return_to_start_menu)
 	_load_progress()
 	_apply_settings(progress.get("settings", {}))
 	if is_instance_valid(music):
@@ -547,6 +549,42 @@ func _set_manual_pause(value):
 	manual_pause_open = value
 	get_tree().paused = value
 	hud.show_pause(value)
+
+func _on_pause_resume_requested():
+	if manual_pause_open:
+		_set_manual_pause(false)
+
+func _return_to_start_menu():
+	get_tree().paused = false
+	run_started = false
+	is_game_over = false
+	level_choice_open = false
+	manual_pause_open = false
+	game_time = 0.0
+	kills = 0
+	level = 1
+	xp = 0
+	xp_required = 8
+	spawn_timer = 0.0
+	spawn_batch_timer = 0.0
+	world_item_timer = 0.0
+	weapon_levels.clear()
+	weapon_timers.clear()
+	weapon_evolved.clear()
+	_reset_run_buffs()
+	_clear_children(enemies)
+	_clear_children(projectiles)
+	_clear_children(pickups)
+	_clear_children(world_items)
+	_reset_world_to_menu()
+	if is_instance_valid(music):
+		music.configure("menu")
+	hud.show_pause(false)
+	hud.hide_game_over()
+	hud.set_stats(player.health, player.max_health, xp, xp_required, level, kills, game_time)
+	hud.set_run_context(_t("select_stage"), _t("select_character"))
+	hud.set_weapons([])
+	hud.show_start_menu(characters, stages, progress, _start_run)
 
 func _start_run(stage_id, character_id, player_count = 1):
 	selected_stage = _stage_by_id(stage_id)
@@ -625,6 +663,30 @@ func _setup_players(character_id, count):
 	player = players[0]
 	if group_camera != null:
 		group_camera.enabled = true
+
+func _reset_world_to_menu():
+	for existing in get_tree().get_nodes_in_group("player"):
+		if existing != player and existing.get_parent() == world:
+			existing.queue_free()
+
+	players.clear()
+	party_characters.clear()
+	if is_instance_valid(player):
+		player.configure(characters[0], 0)
+		player.global_position = Vector2.ZERO
+		_set_player_camera(player, false)
+		_connect_player_signals(player)
+		players.append(player)
+		party_characters.append(characters[0])
+	if group_camera != null:
+		group_camera.enabled = true
+		group_camera.global_position = Vector2.ZERO
+	if floor != null:
+		floor.set_stage(stages[0])
+	if mine_darkness != null:
+		mine_darkness.visible = false
+		if mine_darkness.has_method("set_active"):
+			mine_darkness.set_active(false)
 
 func _connect_player_signals(current_player):
 	var health_callable = Callable(self, "_on_player_health_changed")

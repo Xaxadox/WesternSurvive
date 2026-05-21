@@ -1,8 +1,11 @@
 extends CanvasLayer
 
 signal settings_changed(settings)
+signal resume_requested
+signal return_to_menu_requested
 
 const UpgradeIconScript = preload("res://scripts/UpgradeIcon.gd")
+const MENU_ATLAS_PATH = "res://assets/menu/western_menu_atlas.png"
 
 var health_bar
 var xp_bar
@@ -21,6 +24,8 @@ var player_count_option
 
 var pause_layer
 var pause_label
+var pause_content
+var pause_menu_mode = "home"
 var level_layer
 var level_title_label
 var game_over_layer
@@ -29,6 +34,8 @@ var game_over_stats
 var restart_button
 var start_layer
 var start_title_label
+var start_content
+var start_menu_mode = "home"
 var character_list
 var character_title_label
 var stage_list
@@ -57,6 +64,7 @@ var selected_player_count = 1
 var resolution_values = ["960x540", "1280x720", "1366x768", "1600x900", "1920x1080"]
 var language_values = ["pt", "en"]
 var current_language = "pt"
+var menu_atlas_texture = null
 var current_settings = {
 	"master_volume": 0.85,
 	"music_volume": 0.55,
@@ -67,11 +75,23 @@ var current_settings = {
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_load_menu_atlas()
 	_build_hud()
 	_build_pause_layer()
 	_build_level_layer()
 	_build_game_over_layer()
 	_build_start_layer()
+
+func _load_menu_atlas():
+	var loaded = ResourceLoader.load(MENU_ATLAS_PATH)
+	if loaded is Texture2D:
+		menu_atlas_texture = loaded
+		return
+
+	var image = Image.new()
+	var error = image.load(MENU_ATLAS_PATH)
+	if error == OK:
+		menu_atlas_texture = ImageTexture.create_from_image(image)
 
 func _process(delta):
 	if notice_timer > 0.0:
@@ -203,7 +223,7 @@ func _build_start_layer():
 	margin.add_child(box)
 
 	start_title_label = Label.new()
-	start_title_label.text = _tr("start_title")
+	start_title_label.text = "Western Survive"
 	start_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	start_title_label.add_theme_font_size_override("font_size", 26)
 	box.add_child(start_title_label)
@@ -213,165 +233,294 @@ func _build_start_layer():
 	progress_label.add_theme_font_size_override("font_size", 13)
 	box.add_child(progress_label)
 
-	var columns = HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 12)
-	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.add_child(columns)
+	start_content = VBoxContainer.new()
+	start_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	start_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	start_content.add_theme_constant_override("separation", 12)
+	box.add_child(start_content)
 
-	var character_panel = PanelContainer.new()
-	character_panel.add_theme_stylebox_override("panel", _panel_style(Color("#201711")))
-	character_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	character_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	columns.add_child(character_panel)
+func _show_start_mode(mode):
+	start_menu_mode = mode
+	if start_content == null:
+		return
 
-	var character_box = VBoxContainer.new()
-	character_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	character_box.add_theme_constant_override("separation", 8)
-	character_panel.add_child(character_box)
+	_clear_container(start_content)
+	_reset_start_content_refs()
+	_update_start_progress_label()
 
-	character_title_label = Label.new()
-	character_title_label.text = _tr("characters")
-	character_title_label.add_theme_font_size_override("font_size", 19)
-	character_box.add_child(character_title_label)
+	match mode:
+		"characters":
+			_build_character_menu()
+		"stages":
+			_build_stage_menu()
+		"language":
+			_build_language_menu(start_content, true)
+		"video":
+			_build_video_menu(start_content, true)
+		"audio":
+			_build_audio_menu(start_content, true)
+		_:
+			_build_start_home()
 
-	var character_scroll = ScrollContainer.new()
-	character_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	character_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	character_box.add_child(character_scroll)
+func _build_start_home():
+	start_title_label.text = "Western Survive"
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 26)
+	start_content.add_child(spacer)
 
-	character_list = VBoxContainer.new()
-	character_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	character_list.add_theme_constant_override("separation", 10)
-	character_scroll.add_child(character_list)
+	_add_menu_button(start_content, _tr("play"), Callable(self, "_show_start_mode").bind("characters"), 300, 9)
+	_add_menu_button(start_content, _tr("language"), Callable(self, "_show_start_mode").bind("language"), 300, 10)
+	_add_menu_button(start_content, _tr("video"), Callable(self, "_show_start_mode").bind("video"), 300, 11)
+	_add_menu_button(start_content, _tr("audio"), Callable(self, "_show_start_mode").bind("audio"), 300, 12)
 
-	var stage_panel = PanelContainer.new()
-	stage_panel.add_theme_stylebox_override("panel", _panel_style(Color("#201711")))
-	stage_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stage_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	columns.add_child(stage_panel)
+func _build_character_menu():
+	start_title_label.text = _tr("choose_character")
+	character_title_label = _add_section_title(start_content, _tr("characters"))
+	character_list = _add_scroll_list(start_content)
 
-	var stage_box = VBoxContainer.new()
-	stage_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	stage_box.add_theme_constant_override("separation", 8)
-	stage_panel.add_child(stage_box)
+	selected_character_index = clampi(selected_character_index, 0, maxi(start_characters.size() - 1, 0))
+	for i in range(start_characters.size()):
+		var button = _add_list_button(character_list, Callable(self, "_select_character").bind(i), i)
+		button.set_meta("entry_index", i)
 
-	stage_title_label = Label.new()
-	stage_title_label.text = _tr("stages")
-	stage_title_label.add_theme_font_size_override("font_size", 19)
-	stage_box.add_child(stage_title_label)
+	selection_info_label = _add_selection_info(start_content)
+	_add_player_count_controls(start_content)
+	var row = _add_button_row(start_content)
+	_add_menu_button(row, _tr("back"), Callable(self, "_show_start_mode").bind("home"), 180)
+	_add_menu_button(row, _tr("continue"), Callable(self, "_show_start_mode").bind("stages"), 220)
+	_update_start_buttons()
 
-	var stage_scroll = ScrollContainer.new()
-	stage_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stage_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	stage_box.add_child(stage_scroll)
+func _build_stage_menu():
+	start_title_label.text = _tr("choose_stage")
+	stage_title_label = _add_section_title(start_content, _tr("stages"))
+	stage_list = _add_scroll_list(start_content)
 
-	stage_list = VBoxContainer.new()
-	stage_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stage_list.add_theme_constant_override("separation", 10)
-	stage_scroll.add_child(stage_list)
+	selected_stage_index = clampi(selected_stage_index, 0, maxi(start_stages.size() - 1, 0))
+	for i in range(start_stages.size()):
+		var button = _add_list_button(stage_list, Callable(self, "_select_stage").bind(i), 4 + i)
+		button.set_meta("entry_index", i)
 
-	selection_info_label = Label.new()
-	selection_info_label.custom_minimum_size = Vector2(0, 42)
-	selection_info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	selection_info_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	selection_info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	selection_info_label.add_theme_font_size_override("font_size", 12)
-	box.add_child(selection_info_label)
+	selection_info_label = _add_selection_info(start_content)
+	var row = _add_button_row(start_content)
+	_add_menu_button(row, _tr("back"), Callable(self, "_show_start_mode").bind("characters"), 180)
+	start_button = _add_menu_button(row, _tr("start"), Callable(self, "_on_start_pressed"), 220)
+	_update_start_buttons()
 
-	var settings_panel = PanelContainer.new()
-	settings_panel.add_theme_stylebox_override("panel", _panel_style(Color("#201711")))
-	box.add_child(settings_panel)
+func _build_language_menu(parent, show_back):
+	start_title_label.text = _tr("language") if parent == start_content else _tr("paused")
+	_add_language_controls(parent)
+	if show_back:
+		_add_menu_button(parent, _tr("back"), Callable(self, "_show_start_mode").bind("home"), 220)
 
-	var settings_box = HBoxContainer.new()
-	settings_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	settings_box.add_theme_constant_override("separation", 12)
-	settings_panel.add_child(settings_box)
+func _build_video_menu(parent, show_back):
+	start_title_label.text = _tr("video") if parent == start_content else _tr("paused")
+	_add_video_controls(parent)
+	if show_back:
+		_add_menu_button(parent, _tr("back"), Callable(self, "_show_start_mode").bind("home"), 220)
 
-	var players_box = VBoxContainer.new()
-	players_box.custom_minimum_size = Vector2(112, 46)
-	settings_box.add_child(players_box)
+func _build_audio_menu(parent, show_back):
+	start_title_label.text = _tr("audio") if parent == start_content else _tr("paused")
+	_add_audio_controls(parent)
+	if show_back:
+		_add_menu_button(parent, _tr("back"), Callable(self, "_show_start_mode").bind("home"), 220)
 
+func _add_section_title(parent, text):
+	var label = Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 20)
+	parent.add_child(label)
+	return label
+
+func _add_scroll_list(parent):
+	var panel = PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _panel_style(Color("#201711")))
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	parent.add_child(panel)
+
+	var scroll = ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.add_child(scroll)
+
+	var list = VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 8)
+	scroll.add_child(list)
+	return list
+
+func _add_list_button(parent, callback, icon_index = -1):
+	var button = Button.new()
+	button.custom_minimum_size = Vector2(0, 58)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.add_theme_font_size_override("font_size", 14)
+	_apply_button_icon(button, icon_index)
+	button.pressed.connect(callback)
+	parent.add_child(button)
+	return button
+
+func _add_selection_info(parent):
+	var label = Label.new()
+	label.custom_minimum_size = Vector2(0, 50)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_font_size_override("font_size", 13)
+	parent.add_child(label)
+	return label
+
+func _add_button_row(parent):
+	var row = HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	row.add_theme_constant_override("separation", 12)
+	parent.add_child(row)
+	return row
+
+func _add_menu_button(parent, text, callback, width, icon_index = -1):
+	var button = Button.new()
+	button.text = text
+	button.custom_minimum_size = Vector2(width, 44)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_apply_button_icon(button, icon_index)
+	button.pressed.connect(callback)
+	parent.add_child(button)
+	return button
+
+func _apply_button_icon(button, icon_index):
+	if icon_index < 0 or menu_atlas_texture == null:
+		return
+	var texture = _menu_atlas_region(icon_index)
+	if texture == null:
+		return
+	button.icon = texture
+	button.expand_icon = true
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+
+func _menu_atlas_region(index):
+	if menu_atlas_texture == null:
+		return null
+	var texture = AtlasTexture.new()
+	texture.atlas = menu_atlas_texture
+	var cell = float(menu_atlas_texture.get_width()) / 4.0
+	var col = index % 4
+	var row = int(index / 4)
+	texture.region = Rect2(float(col) * cell, float(row) * cell, cell, cell)
+	return texture
+
+func _add_language_controls(parent):
+	var box = _add_settings_panel(parent)
+	language_label = Label.new()
+	language_label.text = _tr("language")
+	box.add_child(language_label)
+
+	language_option = OptionButton.new()
+	language_option.add_item(_tr("portuguese"))
+	language_option.add_item("English")
+	language_option.item_selected.connect(_on_language_selected)
+	box.add_child(language_option)
+	_sync_settings_controls()
+
+func _add_player_count_controls(parent):
+	var box = _add_settings_panel(parent)
 	players_label = Label.new()
 	players_label.text = _tr("players")
-	players_box.add_child(players_label)
+	box.add_child(players_label)
 
 	player_count_option = OptionButton.new()
 	for i in range(1, 5):
 		player_count_option.add_item(str(i))
+	player_count_option.select(clampi(selected_player_count - 1, 0, 3))
 	player_count_option.item_selected.connect(_on_player_count_selected)
-	players_box.add_child(player_count_option)
+	box.add_child(player_count_option)
 
-	var language_box = VBoxContainer.new()
-	language_box.custom_minimum_size = Vector2(118, 46)
-	settings_box.add_child(language_box)
+func _add_video_controls(parent):
+	var box = _add_settings_panel(parent)
+	resolution_label = Label.new()
+	resolution_label.text = _tr("resolution")
+	box.add_child(resolution_label)
 
-	language_label = Label.new()
-	language_label.text = _tr("language")
-	language_box.add_child(language_label)
+	resolution_option = OptionButton.new()
+	for value in resolution_values:
+		resolution_option.add_item(value)
+	resolution_option.item_selected.connect(_on_resolution_selected)
+	box.add_child(resolution_option)
 
-	language_option = OptionButton.new()
-	language_option.add_item("Portugues")
-	language_option.add_item("English")
-	language_option.item_selected.connect(_on_language_selected)
-	language_box.add_child(language_option)
+	fullscreen_check = CheckButton.new()
+	fullscreen_check.text = _tr("fullscreen")
+	fullscreen_check.toggled.connect(_on_fullscreen_toggled)
+	box.add_child(fullscreen_check)
+	_sync_settings_controls()
 
-	var master_box = VBoxContainer.new()
-	master_box.custom_minimum_size = Vector2(150, 46)
-	master_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	settings_box.add_child(master_box)
-
+func _add_audio_controls(parent):
+	var box = _add_settings_panel(parent)
 	master_label = Label.new()
 	master_label.text = _tr("master_volume")
-	master_box.add_child(master_label)
+	box.add_child(master_label)
 
 	master_slider = HSlider.new()
 	master_slider.min_value = 0
 	master_slider.max_value = 100
 	master_slider.step = 1
 	master_slider.value_changed.connect(_on_master_volume_changed)
-	master_box.add_child(master_slider)
-
-	var music_box = VBoxContainer.new()
-	music_box.custom_minimum_size = Vector2(150, 46)
-	music_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	settings_box.add_child(music_box)
+	box.add_child(master_slider)
 
 	music_label = Label.new()
 	music_label.text = _tr("music")
-	music_box.add_child(music_label)
+	box.add_child(music_label)
 
 	music_slider = HSlider.new()
 	music_slider.min_value = 0
 	music_slider.max_value = 100
 	music_slider.step = 1
 	music_slider.value_changed.connect(_on_music_volume_changed)
-	music_box.add_child(music_slider)
+	box.add_child(music_slider)
+	_sync_settings_controls()
 
-	var resolution_box = VBoxContainer.new()
-	resolution_box.custom_minimum_size = Vector2(144, 46)
-	settings_box.add_child(resolution_box)
+func _add_settings_panel(parent):
+	var panel = PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _panel_style(Color("#201711")))
+	panel.custom_minimum_size = Vector2(420, 0)
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	parent.add_child(panel)
 
-	resolution_label = Label.new()
-	resolution_label.text = _tr("resolution")
-	resolution_box.add_child(resolution_label)
+	var box = VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	panel.add_child(box)
+	return box
 
-	resolution_option = OptionButton.new()
-	for value in resolution_values:
-		resolution_option.add_item(value)
-	resolution_option.item_selected.connect(_on_resolution_selected)
-	resolution_box.add_child(resolution_option)
+func _clear_container(container):
+	for child in container.get_children():
+		container.remove_child(child)
+		child.queue_free()
 
-	fullscreen_check = CheckButton.new()
-	fullscreen_check.text = _tr("fullscreen")
-	fullscreen_check.toggled.connect(_on_fullscreen_toggled)
-	settings_box.add_child(fullscreen_check)
+func _reset_start_content_refs():
+	character_list = null
+	character_title_label = null
+	stage_list = null
+	stage_title_label = null
+	selection_info_label = null
+	start_button = null
+	players_label = null
+	player_count_option = null
+	language_label = null
+	language_option = null
+	master_label = null
+	master_slider = null
+	music_label = null
+	music_slider = null
+	resolution_label = null
+	resolution_option = null
+	fullscreen_check = null
 
-	start_button = Button.new()
-	start_button.text = _tr("start")
-	start_button.custom_minimum_size = Vector2(220, 48)
-	start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	start_button.pressed.connect(_on_start_pressed)
-	box.add_child(start_button)
+func _update_start_progress_label():
+	if progress_label == null:
+		return
+	var unlocked_weapons = start_progress.get("unlocked_weapons", [])
+	var secret_count = unlocked_weapons.size()
+	var bonus_text = _tr("bonus_unlocked") if _stage_id_unlocked("bonus") else _tr("bonus_locked")
+	progress_label.text = "%s %d/4  |  %s" % [_tr("secret_weapons"), secret_count, bonus_text]
 
 func _build_pause_layer():
 	pause_layer = Control.new()
@@ -385,13 +534,70 @@ func _build_pause_layer():
 	shade.color = Color(0, 0, 0, 0.45)
 	pause_layer.add_child(shade)
 
+	var panel = PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", _panel_style(Color("#2d2017")))
+	panel.anchor_left = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -260
+	panel.offset_top = -220
+	panel.offset_right = 260
+	panel.offset_bottom = 220
+	pause_layer.add_child(panel)
+
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 22)
+	margin.add_theme_constant_override("margin_top", 20)
+	margin.add_theme_constant_override("margin_right", 22)
+	margin.add_theme_constant_override("margin_bottom", 20)
+	panel.add_child(margin)
+
+	var box = VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	margin.add_child(box)
+
 	pause_label = Label.new()
-	pause_label.text = _tr("paused")
+	pause_label.text = _tr("paused_title")
 	pause_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	pause_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	pause_label.add_theme_font_size_override("font_size", 46)
-	pause_label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	pause_layer.add_child(pause_label)
+	pause_label.add_theme_font_size_override("font_size", 32)
+	box.add_child(pause_label)
+
+	pause_content = VBoxContainer.new()
+	pause_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pause_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	pause_content.add_theme_constant_override("separation", 10)
+	box.add_child(pause_content)
+	_show_pause_mode("home")
+
+func _show_pause_mode(mode):
+	pause_menu_mode = mode
+	if pause_content == null:
+		return
+	_clear_container(pause_content)
+	_reset_start_content_refs()
+
+	if pause_label != null:
+		pause_label.text = _tr("paused_title")
+
+	match mode:
+		"audio":
+			_add_audio_controls(pause_content)
+			_add_menu_button(pause_content, _tr("back"), Callable(self, "_show_pause_mode").bind("home"), 220)
+		"video":
+			_add_video_controls(pause_content)
+			_add_menu_button(pause_content, _tr("back"), Callable(self, "_show_pause_mode").bind("home"), 220)
+		_:
+			_add_menu_button(pause_content, _tr("resume"), Callable(self, "_on_resume_pressed"), 260, 9)
+			_add_menu_button(pause_content, _tr("audio"), Callable(self, "_show_pause_mode").bind("audio"), 260, 12)
+			_add_menu_button(pause_content, _tr("video"), Callable(self, "_show_pause_mode").bind("video"), 260, 11)
+			_add_menu_button(pause_content, _tr("back_to_menu"), Callable(self, "_on_return_to_menu_pressed"), 260)
+
+func _on_resume_pressed():
+	resume_requested.emit()
+
+func _on_return_to_menu_pressed():
+	return_to_menu_requested.emit()
 
 func _build_level_layer():
 	level_layer = Control.new()
@@ -543,9 +749,8 @@ func show_start_menu(characters, stages, progress, callback):
 	selected_character_index = 0
 	selected_stage_index = _first_unlocked_stage_index()
 	selected_player_count = 1
-	if player_count_option != null:
-		player_count_option.select(0)
-	_rebuild_start_buttons()
+	start_menu_mode = "home"
+	_show_start_mode("home")
 	start_layer.visible = true
 
 func hide_start_menu():
@@ -573,65 +778,38 @@ func set_language(language):
 	_apply_language_texts()
 
 func _rebuild_start_buttons():
-	for child in character_list.get_children():
-		character_list.remove_child(child)
-		child.queue_free()
-	for child in stage_list.get_children():
-		stage_list.remove_child(child)
-		child.queue_free()
-
-	var unlocked_weapons = start_progress.get("unlocked_weapons", [])
-	var secret_count = unlocked_weapons.size()
-	var bonus_text = _tr("bonus_unlocked") if _stage_id_unlocked("bonus") else _tr("bonus_locked")
-	progress_label.text = "%s %d/4  |  %s" % [_tr("secret_weapons"), secret_count, bonus_text]
-
-	for i in range(start_characters.size()):
-		var button = Button.new()
-		button.custom_minimum_size = Vector2(0, 42)
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.add_theme_font_size_override("font_size", 14)
-		button.pressed.connect(_select_character.bind(i))
-		character_list.add_child(button)
-
-	for i in range(start_stages.size()):
-		var stage = start_stages[i]
-		var button = Button.new()
-		button.custom_minimum_size = Vector2(0, 42)
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.add_theme_font_size_override("font_size", 14)
-		button.disabled = not _stage_id_unlocked(stage.get("id", ""))
-		button.pressed.connect(_select_stage.bind(i))
-		stage_list.add_child(button)
-
-	_update_start_buttons()
+	_show_start_mode(start_menu_mode)
 
 func _update_start_buttons():
 	if start_characters.is_empty() or start_stages.is_empty():
-		start_button.disabled = true
+		if start_button != null:
+			start_button.disabled = true
 		_update_selection_info()
 		return
 
 	selected_character_index = clampi(selected_character_index, 0, start_characters.size() - 1)
 	selected_stage_index = clampi(selected_stage_index, 0, start_stages.size() - 1)
 
-	for i in range(mini(character_list.get_child_count(), start_characters.size())):
-		var button = character_list.get_child(i)
-		var character = start_characters[i]
-		var prefix = "> " if i == selected_character_index else "  "
-		button.text = "%s%s" % [prefix, _entry_name(character, "character", i)]
+	if character_list != null:
+		for i in range(mini(character_list.get_child_count(), start_characters.size())):
+			var button = character_list.get_child(i)
+			var character = start_characters[i]
+			var prefix = "> " if i == selected_character_index else "  "
+			button.text = "%s%s" % [prefix, _entry_name(character, "character", i)]
 
-	for i in range(mini(stage_list.get_child_count(), start_stages.size())):
-		var button = stage_list.get_child(i)
-		var stage = start_stages[i]
-		var unlocked = _stage_id_unlocked(stage.get("id", ""))
-		var prefix = "> " if i == selected_stage_index else "  "
-		var lock_text = "" if unlocked else " [%s]" % _tr("locked")
-		button.text = "%s%s%s" % [prefix, _entry_name(stage, "stage", i), lock_text]
-		button.disabled = not unlocked
+	if stage_list != null:
+		for i in range(mini(stage_list.get_child_count(), start_stages.size())):
+			var button = stage_list.get_child(i)
+			var stage = start_stages[i]
+			var unlocked = _stage_id_unlocked(stage.get("id", ""))
+			var prefix = "> " if i == selected_stage_index else "  "
+			var lock_text = "" if unlocked else " [%s]" % _tr("locked")
+			button.text = "%s%s%s" % [prefix, _entry_name(stage, "stage", i), lock_text]
+			button.disabled = not unlocked
 
-	if start_stages.is_empty():
+	if start_button == null:
+		pass
+	elif start_stages.is_empty():
 		start_button.disabled = true
 	else:
 		start_button.disabled = not _stage_id_unlocked(start_stages[selected_stage_index].get("id", ""))
@@ -656,25 +834,33 @@ func _update_selection_info():
 	var stage = start_stages[selected_stage_index]
 	var lines = []
 
-	if _character_seen(character.get("id", "")):
+	if _character_seen(character.get("id", ""), selected_character_index):
 		lines.append("%s: %s" % [_entry_name(character, "character", selected_character_index), _localized(character, "desc")])
 	else:
 		lines.append("%s: %s" % [_entry_name(character, "character", selected_character_index), _tr("play_to_reveal")])
 
-	if _stage_seen(stage.get("id", "")):
+	if start_menu_mode == "characters":
+		selection_info_label.text = lines[0]
+		return
+
+	if _stage_seen(stage.get("id", ""), selected_stage_index):
 		lines.append("%s: %s" % [_entry_name(stage, "stage", selected_stage_index), _localized(stage, "desc")])
 	else:
 		lines.append("%s: %s" % [_entry_name(stage, "stage", selected_stage_index), _tr("play_to_reveal")])
 
 	selection_info_label.text = _join_text(lines, "  |  ")
 
-func _character_seen(character_id):
+func _character_seen(character_id, index = -1):
+	if index == 0:
+		return true
 	if character_id == "":
 		return false
 	var played_characters = start_progress.get("played_characters", [])
 	return typeof(played_characters) == TYPE_ARRAY and played_characters.has(character_id)
 
-func _stage_seen(stage_id):
+func _stage_seen(stage_id, index = -1):
+	if index == 0:
+		return true
 	if stage_id == "":
 		return false
 	var played_stages = start_progress.get("played_stages", [])
@@ -736,21 +922,23 @@ func _on_language_selected(index):
 
 
 func _sync_settings_controls():
-	if master_slider == null:
-		return
-	master_slider.set_value_no_signal(float(current_settings.get("master_volume", 0.85)) * 100.0)
-	music_slider.set_value_no_signal(float(current_settings.get("music_volume", 0.55)) * 100.0)
+	if master_slider != null:
+		master_slider.set_value_no_signal(float(current_settings.get("master_volume", 0.85)) * 100.0)
+	if music_slider != null:
+		music_slider.set_value_no_signal(float(current_settings.get("music_volume", 0.55)) * 100.0)
 	if language_option != null:
 		var language_index = language_values.find(str(current_settings.get("language", "pt")))
 		if language_index < 0:
 			language_index = 0
 		language_option.select(language_index)
-	var resolution = str(current_settings.get("resolution", "1280x720"))
-	var index = resolution_values.find(resolution)
-	if index < 0:
-		index = 1
-	resolution_option.select(index)
-	fullscreen_check.set_pressed_no_signal(bool(current_settings.get("fullscreen", false)))
+	if resolution_option != null:
+		var resolution = str(current_settings.get("resolution", "1280x720"))
+		var index = resolution_values.find(resolution)
+		if index < 0:
+			index = 1
+		resolution_option.select(index)
+	if fullscreen_check != null:
+		fullscreen_check.set_pressed_no_signal(bool(current_settings.get("fullscreen", false)))
 
 func _on_master_volume_changed(value):
 	current_settings["master_volume"] = float(value) / 100.0
@@ -773,7 +961,7 @@ func _emit_settings():
 
 func _apply_language_texts():
 	if start_title_label != null:
-		start_title_label.text = _tr("start_title")
+		start_title_label.text = "Western Survive"
 	if character_title_label != null:
 		character_title_label.text = _tr("characters")
 	if stage_title_label != null:
@@ -796,15 +984,17 @@ func _apply_language_texts():
 	if start_button != null:
 		start_button.text = _tr("start")
 	if pause_label != null:
-		pause_label.text = _tr("paused")
+		pause_label.text = _tr("paused_title")
 	if level_title_label != null:
 		level_title_label.text = _tr("choose_upgrade")
 	if game_over_title_label != null:
 		game_over_title_label.text = _tr("game_over")
 	if restart_button != null:
 		restart_button.text = _tr("back_to_menu")
-	if start_layer != null and start_layer.visible and character_list != null:
-		_rebuild_start_buttons()
+	if start_layer != null and start_layer.visible:
+		_show_start_mode(start_menu_mode)
+	if pause_layer != null and pause_layer.visible:
+		_show_pause_mode(pause_menu_mode)
 
 func _localized(data, key):
 	if typeof(data) != TYPE_DICTIONARY:
@@ -833,6 +1023,16 @@ func _tr(key):
 	match key:
 		"start_title":
 			return "Choose your survivor and stage" if english else "Escolha seu sobrevivente e a fase"
+		"play":
+			return "Play" if english else "Jogar"
+		"video":
+			return "Video" if english else "Video"
+		"audio":
+			return "Audio" if english else "Audio"
+		"choose_character":
+			return "Choose your survivor" if english else "Escolha seu sobrevivente"
+		"choose_stage":
+			return "Choose the stage" if english else "Escolha a fase"
 		"characters":
 			return "Characters" if english else "Personagens"
 		"stages":
@@ -859,6 +1059,14 @@ func _tr(key):
 			return "Fullscreen" if english else "Tela cheia"
 		"start":
 			return "Start" if english else "Comecar"
+		"continue":
+			return "Continue" if english else "Continuar"
+		"back":
+			return "Back" if english else "Voltar"
+		"resume":
+			return "Resume" if english else "Continuar"
+		"paused_title":
+			return "Paused" if english else "Pausado"
 		"paused":
 			return "Paused\nESC to resume" if english else "Pausado\nESC para voltar"
 		"choose_upgrade":
@@ -916,6 +1124,8 @@ func show_toast(text):
 	notice_timer = 3.2
 
 func show_pause(visible):
+	if visible:
+		_show_pause_mode("home")
 	pause_layer.visible = visible
 
 func show_level_up(choices, callback):
