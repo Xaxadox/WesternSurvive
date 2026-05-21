@@ -14,6 +14,8 @@ var explode_radius = 0.0
 var explode_on_hit = false
 var explode_on_expire = false
 var exploded = false
+var ricochet_count = 0
+var max_ricochets = 2
 
 func _ready():
 	collision_layer = 0
@@ -38,12 +40,19 @@ func setup(direction, amount, bullet_speed, bullet_pierce, bullet_lifetime, opti
 	explode_radius = float(options.get("explode_radius", 0.0))
 	explode_on_hit = bool(options.get("explode_on_hit", false))
 	explode_on_expire = bool(options.get("explode_on_expire", false))
+	max_ricochets = int(options.get("max_ricochets", max_ricochets))
 	_set_collision_radius(hit_radius)
 	call_deferred("_damage_existing_overlaps")
 	queue_redraw()
 
 func _physics_process(delta):
-	position += velocity * delta
+	var next_global_position = global_position + velocity * delta
+	if _handle_stage_wall(next_global_position):
+		if is_queued_for_deletion():
+			return
+	else:
+		global_position = next_global_position
+
 	if spin_speed != 0.0:
 		rotation += spin_speed * delta
 	elif velocity.length() > 0.0:
@@ -60,6 +69,50 @@ func _set_collision_radius(radius):
 	var shape = CircleShape2D.new()
 	shape.radius = radius
 	$CollisionShape2D.shape = shape
+
+func _handle_stage_wall(next_global_position):
+	var floor = _stage_floor()
+	if floor == null or not floor.has_method("is_mine_walkable"):
+		return false
+	if floor.is_mine_walkable(next_global_position):
+		return false
+
+	if _can_ricochet():
+		_apply_ricochet(floor, next_global_position)
+		return true
+
+	if explode_on_hit or explode_on_expire:
+		_explode()
+	else:
+		queue_free()
+	return true
+
+func _can_ricochet():
+	return ricochet_count < max_ricochets and (visual == "bullet" or visual == "knife")
+
+func _apply_ricochet(floor, next_global_position):
+	var current = global_position
+	var x_blocked = not floor.is_mine_walkable(Vector2(next_global_position.x, current.y))
+	var y_blocked = not floor.is_mine_walkable(Vector2(current.x, next_global_position.y))
+
+	if x_blocked:
+		velocity.x = -velocity.x
+	if y_blocked:
+		velocity.y = -velocity.y
+	if not x_blocked and not y_blocked:
+		var normal = (current - next_global_position).normalized()
+		if normal == Vector2.ZERO:
+			normal = -velocity.normalized()
+		velocity = velocity.bounce(normal)
+
+	ricochet_count += 1
+	rotation = velocity.angle()
+
+func _stage_floor():
+	var scene = get_tree().current_scene
+	if scene == null:
+		return null
+	return scene.get_node_or_null("World/DesertFloor")
 
 func _damage_existing_overlaps():
 	for body in get_overlapping_bodies():
