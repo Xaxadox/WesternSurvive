@@ -1,0 +1,215 @@
+extends RefCounted
+
+static func fire(context, weapon_id, shooter):
+	if not context._player_alive(shooter):
+		return
+
+	context.firing_weapon_context = weapon_id
+	match weapon_id:
+		"revolver":
+			_fire_revolver(context, weapon_id, shooter, Color("#ffe7a0"), 0)
+		"shotgun":
+			_fire_shotgun(context, weapon_id, shooter, 0)
+		"dynamite":
+			_fire_explosive(context, weapon_id, shooter, "dynamite")
+		"lasso":
+			_fire_lasso(context, weapon_id, shooter)
+		"knife":
+			_fire_knife(context, weapon_id, shooter)
+		"rifle":
+			_fire_rifle(context, weapon_id, shooter, Color("#d8e4ff"), "rail")
+		"fire_bottle":
+			_fire_explosive(context, weapon_id, shooter, "fire")
+		"horseshoe":
+			_fire_horseshoe(context, weapon_id, shooter)
+		"golden_revolver":
+			_fire_revolver(context, weapon_id, shooter, Color("#ffd55d"), 2)
+		"coach_gun":
+			_fire_shotgun(context, weapon_id, shooter, 3)
+		"rail_spike":
+			_fire_rifle(context, weapon_id, shooter, Color("#b9f0ff"), "rail_spike")
+		"ghost_lantern":
+			_fire_ghost_lantern(context, weapon_id, shooter)
+	context.firing_weapon_context = ""
+
+static func _fire_revolver(context, weapon_id, shooter, color, bonus_shots):
+	var base_direction = context._weapon_direction(weapon_id, shooter)
+	if base_direction == Vector2.ZERO:
+		return
+
+	var level_value = context._weapon_level(weapon_id)
+	var evolved = context._is_evolved(weapon_id)
+	var shots = 1 + int((level_value - 1) / 2) + bonus_shots
+	if evolved:
+		shots += 2
+
+	var damage = context._scaled_damage(7 + level_value * 3 + bonus_shots * 2, shooter)
+	var pierce = 1 + int(level_value >= 4) + int(evolved) * 2
+	var spread = 0.08 if shots > 1 else 0.0
+
+	for i in range(shots):
+		var offset = (float(i) - float(shots - 1) / 2.0) * spread
+		context._fire_projectile(shooter, base_direction.rotated(offset), damage, 1120.0 + level_value * 35.0, pierce, 1.42, {
+			"hit_radius": 6.0,
+			"visual": "bullet",
+			"color": color,
+			"line_length": 22.0
+		})
+
+static func _fire_shotgun(context, weapon_id, shooter, bonus_pellets):
+	var base_direction = context._weapon_direction(weapon_id, shooter)
+	if base_direction == Vector2.ZERO:
+		return
+
+	var level_value = context._weapon_level(weapon_id)
+	var evolved = context._is_evolved(weapon_id)
+	var pellets = 4 + level_value + bonus_pellets
+	if evolved:
+		pellets += 3
+
+	var damage = context._scaled_damage(4 + level_value * 2 + bonus_pellets, shooter)
+	var spread = 0.56 + level_value * 0.025
+	var pierce = 1 + int(evolved)
+
+	for i in range(pellets):
+		var t = 0.0
+		if pellets > 1:
+			t = float(i) / float(pellets - 1) - 0.5
+		context._fire_projectile(shooter, base_direction.rotated(t * spread), damage, 930.0, pierce, 0.68, {
+			"hit_radius": 5.5,
+			"visual": "bullet",
+			"color": Color("#f2d799"),
+			"line_length": 14.0
+		})
+
+static func _fire_explosive(context, weapon_id, shooter, visual):
+	var direction = context._weapon_direction(weapon_id, shooter)
+	if direction == Vector2.ZERO:
+		return
+
+	var level_value = context._weapon_level(weapon_id)
+	var evolved = context._is_evolved(weapon_id)
+	var is_fire = visual == "fire"
+	var radius = 46.0 + level_value * 10.0
+	var damage = context._scaled_damage(8 + level_value * 4, shooter)
+	var speed = 520.0 + level_value * 34.0
+	var lifetime = 0.82
+	if is_fire:
+		radius += 12.0
+		damage = context._scaled_damage(6 + level_value * 3, shooter)
+		lifetime = 0.72
+	if evolved:
+		radius += 36.0
+		damage += context._scaled_damage(8, shooter)
+
+	context._fire_projectile(shooter, direction, damage, speed, 1, lifetime, {
+		"hit_radius": 9.0,
+		"visual": visual,
+		"color": Color("#f15d32") if is_fire else Color("#3a2518"),
+		"explode_radius": radius,
+		"explode_on_hit": true,
+		"explode_on_expire": true
+	})
+
+	if evolved and not is_fire:
+		for i in range(6):
+			context._fire_projectile(shooter, Vector2.RIGHT.rotated(float(i) / 6.0 * TAU), context._scaled_damage(5 + level_value, shooter), 820.0, 1, 0.46, {
+				"hit_radius": 4.0,
+				"visual": "shard",
+				"color": Color("#efc16f"),
+				"line_length": 12.0
+			})
+
+static func _fire_lasso(context, weapon_id, shooter):
+	var direction = context._weapon_direction(weapon_id, shooter)
+	if direction == Vector2.ZERO:
+		return
+
+	var level_value = context._weapon_level(weapon_id)
+	var evolved = context._is_evolved(weapon_id)
+	context._fire_projectile(shooter, direction, context._scaled_damage(4 + level_value * 2, shooter), 690.0 + level_value * 24.0, 7 + level_value * 2 + int(evolved) * 8, 0.84 + level_value * 0.045, {
+		"hit_radius": 15.0 + level_value * 1.6 + int(evolved) * 9.0,
+		"visual": "lasso",
+		"color": Color("#d2a257"),
+		"line_length": 34.0 + level_value * 3.0,
+		"spin": 7.0
+	})
+
+static func _fire_knife(context, weapon_id, shooter):
+	var base_direction = context._weapon_direction(weapon_id, shooter)
+	if base_direction == Vector2.ZERO:
+		return
+
+	var level_value = context._weapon_level(weapon_id)
+	var evolved = context._is_evolved(weapon_id)
+	var knives = 2 + level_value + int(evolved) * 4
+	var spread = 0.34 + level_value * 0.035
+
+	for i in range(knives):
+		var t = 0.0
+		if knives > 1:
+			t = float(i) / float(knives - 1) - 0.5
+		context._fire_projectile(shooter, base_direction.rotated(t * spread), context._scaled_damage(5 + level_value * 2, shooter), 1260.0, 1 + int(level_value >= 4) + int(evolved), 0.82, {
+			"hit_radius": 5.0,
+			"visual": "knife",
+			"color": Color("#d9e0e2"),
+			"line_length": 20.0
+		})
+
+static func _fire_rifle(context, weapon_id, shooter, color, visual):
+	var direction = context._weapon_direction(weapon_id, shooter)
+	if direction == Vector2.ZERO:
+		return
+
+	var level_value = context._weapon_level(weapon_id)
+	var evolved = context._is_evolved(weapon_id)
+	var secret_bonus = 5 if weapon_id == "rail_spike" else 0
+	context._fire_projectile(shooter, direction, context._scaled_damage(15 + level_value * 6 + secret_bonus, shooter), 1480.0, 3 + level_value + int(evolved) * 7, 1.06, {
+		"hit_radius": 7.0 + int(evolved) * 2.0,
+		"visual": visual,
+		"color": color,
+		"line_length": 34.0 + level_value * 2.0
+	})
+
+static func _fire_horseshoe(context, weapon_id, shooter):
+	var level_value = context._weapon_level(weapon_id)
+	var evolved = context._is_evolved(weapon_id)
+	var shoes = 2 + level_value + int(evolved) * 4
+	var start_angle = context.rng.randf_range(0.0, TAU)
+
+	for i in range(shoes):
+		var direction = Vector2.RIGHT.rotated(start_angle + float(i) / float(shoes) * TAU)
+		context._fire_projectile(shooter, direction, context._scaled_damage(5 + level_value * 2, shooter), 860.0 + level_value * 30.0, 2 + int(evolved) * 4, 0.92, {
+			"hit_radius": 7.5,
+			"visual": "horseshoe",
+			"color": Color("#bfc4c2"),
+			"line_length": 18.0,
+			"spin": 12.0
+		})
+
+static func _fire_ghost_lantern(context, weapon_id, shooter):
+	var level_value = context._weapon_level(weapon_id)
+	var evolved = context._is_evolved(weapon_id)
+	var pulses = 4 + level_value + int(evolved) * 4
+	if context._is_synergy_weapon(weapon_id, shooter):
+		pulses += 2
+	var radius = 22.0 + level_value * 2.0 + int(evolved) * 7.0
+	var start_angle = context.rng.randf_range(0.0, TAU)
+
+	for i in range(pulses):
+		var direction = Vector2.RIGHT.rotated(start_angle + float(i) / float(pulses) * TAU)
+		context._fire_projectile(shooter, direction, context._scaled_damage(7 + level_value * 3, shooter), 390.0 + level_value * 26.0, 99, 0.52 + level_value * 0.045, {
+			"hit_radius": radius,
+			"visual": "lantern",
+			"color": Color("#9be8d4"),
+			"line_length": 16.0,
+			"spin": 2.8
+		})
+
+	if evolved:
+		context._fire_projectile(shooter, Vector2.ZERO, context._scaled_damage(18 + level_value * 3, shooter), 0.0, 999, 0.22, {
+			"hit_radius": 90.0,
+			"visual": "lantern",
+			"color": Color("#c9fff0"),
+			"line_length": 8.0
+		})
