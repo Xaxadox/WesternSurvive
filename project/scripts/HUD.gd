@@ -8,6 +8,7 @@ const UpgradeIconScript = preload("res://scripts/UpgradeIcon.gd")
 const MENU_ATLAS_PATH = "res://assets/menu/western_menu_atlas.png"
 const PAUSE_MENU_SCENE = preload("res://scenes/ui/pause_menu.tscn")
 const LEVEL_UP_MENU_SCENE = preload("res://scenes/ui/level_up_menu.tscn")
+const START_MENU_SCENE = preload("res://scenes/ui/start_menu.tscn")
 
 var health_bar
 var xp_bar
@@ -193,54 +194,17 @@ func _build_hud():
 	root.add_child(notice_label)
 
 func _build_start_layer():
-	start_layer = Control.new()
-	start_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	start_layer = START_MENU_SCENE.instantiate()
 	start_layer.visible = false
 	start_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(start_layer)
 
-	var shade = ColorRect.new()
-	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(0.02, 0.015, 0.01, 0.83)
-	start_layer.add_child(shade)
-
-	var panel = PanelContainer.new()
+	var panel = start_layer.get_node("Panel")
 	panel.add_theme_stylebox_override("panel", _panel_style(Color("#2d2017")))
-	panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	panel.offset_left = 18
-	panel.offset_top = 16
-	panel.offset_right = -18
-	panel.offset_bottom = -16
-	start_layer.add_child(panel)
-
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 18)
-	margin.add_theme_constant_override("margin_top", 14)
-	margin.add_theme_constant_override("margin_right", 18)
-	margin.add_theme_constant_override("margin_bottom", 14)
-	panel.add_child(margin)
-
-	var box = VBoxContainer.new()
-	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.add_theme_constant_override("separation", 12)
-	margin.add_child(box)
-
-	start_title_label = Label.new()
+	start_title_label = start_layer.get_node("Panel/Margin/Box/Title")
 	start_title_label.text = "Western Survive"
-	start_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	start_title_label.add_theme_font_size_override("font_size", 26)
-	box.add_child(start_title_label)
-
-	progress_label = Label.new()
-	progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	progress_label.add_theme_font_size_override("font_size", 13)
-	box.add_child(progress_label)
-
-	start_content = VBoxContainer.new()
-	start_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	start_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	start_content.add_theme_constant_override("separation", 12)
-	box.add_child(start_content)
+	progress_label = start_layer.get_node("Panel/Margin/Box/Progress")
+	start_content = start_layer.get_node("Panel/Margin/Box/Content")
 
 func _show_start_mode(mode):
 	start_menu_mode = mode

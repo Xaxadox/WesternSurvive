@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://westernsurvive_start_menu"]
+
+[node name="StartMenu" type="Control"]
+visible = false
+process_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Shade" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.015, 0.01, 0.83)
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 16.0
+offset_right = -18.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="Box" type="VBoxContainer" parent="Panel/Margin"]
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Panel/Margin/Box"]
+text = "Western Survive"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 26
+
+[node name="Progress" type="Label" parent="Panel/Margin/Box"]
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 13
+
+[node name="Content" type="VBoxContainer" parent="Panel/Margin/Box"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
