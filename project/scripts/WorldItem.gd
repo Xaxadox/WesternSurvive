@@ -77,10 +77,15 @@ func _explode():
 	explosion_left = 0.18
 
 	for current_player in SpatialUtils.alive_in_radius(global_position, players, explosion_radius):
-		current_player.damage(damage_amount)
+		if current_player.has_method("take_damage"):
+			current_player.take_damage(damage_amount, global_position)
+		else:
+			current_player.damage(damage_amount)
 
 	for enemy in SpatialUtils.valid_in_radius(global_position, _enemy_nodes(), explosion_radius):
-		if enemy.has_method("hurt"):
+		if enemy.has_method("take_damage"):
+			enemy.take_damage(damage_amount, global_position)
+		elif enemy.has_method("hurt"):
 			enemy.hurt(damage_amount, global_position)
 
 	queue_redraw()

@@ -72,9 +72,13 @@ func _physics_process(delta):
 	_apply_player_soft_collision(target)
 
 func hurt(amount, source_position):
+	take_damage(amount, source_position)
+
+func take_damage(amount, source_position = null):
 	health -= amount
-	if source_position != global_position:
-		global_position += (global_position - source_position).normalized() * knockback
+	var hit_position = global_position if source_position == null else source_position
+	if hit_position != global_position:
+		global_position += (global_position - hit_position).normalized() * knockback
 
 	if health <= 0:
 		died.emit(self)

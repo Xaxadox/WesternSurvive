@@ -76,7 +76,9 @@ func _on_body_entered(body):
 		return
 
 	hit_targets[body] = true
-	if body.has_method("hurt"):
+	if body.has_method("take_damage"):
+		body.take_damage(damage, global_position)
+	elif body.has_method("hurt"):
 		body.hurt(damage, global_position)
 
 	pierce -= 1
@@ -93,7 +95,9 @@ func _explode():
 		if not is_instance_valid(enemy):
 			continue
 		if global_position.distance_to(enemy.global_position) <= radius:
-			if enemy.has_method("hurt"):
+			if enemy.has_method("take_damage"):
+				enemy.take_damage(damage, global_position)
+			elif enemy.has_method("hurt"):
 				enemy.hurt(damage, global_position)
 
 	queue_free()

@@ -153,6 +153,9 @@ func _joy_direction():
 	return direction
 
 func damage(amount):
+	take_damage(amount)
+
+func take_damage(amount, _source_position = null):
 	if not alive or invulnerable_time > 0.0:
 		return
 
