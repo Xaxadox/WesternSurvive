@@ -23,6 +23,7 @@ var music_slider
 var resolution_option
 var fullscreen_check
 var player_count_option
+var beat_tween: Tween = null
 
 var pause_layer
 var pause_label
@@ -1061,6 +1062,24 @@ func show_game_over(kills, elapsed_time, stage_name = "", secret_count = 0):
 
 func hide_game_over():
 	game_over_layer.visible = false
+
+func pulse_music_beat(type):
+	var target = title_label
+	if start_layer != null and start_layer.visible and start_title_label != null:
+		target = start_title_label
+	if target == null or not is_instance_valid(target):
+		return
+
+	if beat_tween != null:
+		beat_tween.kill()
+
+	var pulse_scale = Vector2(1.08, 1.08) if type == "kick" else Vector2(1.035, 1.035)
+	var pulse_time = 0.16 if type == "kick" else 0.10
+	target.pivot_offset = target.size * 0.5
+	target.scale = pulse_scale
+	beat_tween = create_tween()
+	beat_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	beat_tween.tween_property(target, "scale", Vector2.ONE, pulse_time).set_ease(Tween.EASE_OUT)
 
 func _on_choice_pressed(index):
 	if index >= current_choices.size():

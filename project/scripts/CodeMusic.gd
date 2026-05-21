@@ -1,5 +1,7 @@
 extends Node
 
+signal beat_hit(type)
+
 const SILENCE_NOTE = -99
 const DEFAULT_STAGE_ID = "menu"
 const AUDIO_CHUNKS_PER_SECOND = 60.0
@@ -350,6 +352,15 @@ func _trigger_step(profile, root, step_tick, step, phrase, melody_markov, chords
 	var chord = chords[int(step_tick / 8) % chords.size()]
 	var harmony_note = int(chord[(int(step_tick / 4) + phrase) % chord.size()])
 	var bass_note = int(bass_line[int(step_tick / 4) % bass_line.size()])
+	var is_kick = step % 8 == 0 or (stage_id == "canyon" and step % 16 == 12) or (stage_id == "bonus" and step % 8 == 6)
+	var is_snare = step % 16 == 8 or step % 16 == 14
+	if stage_id == "mine":
+		is_snare = step % 16 == 12
+
+	if is_kick:
+		_emit_beat_hit("kick")
+	elif is_snare:
+		_emit_beat_hit("snare")
 
 	if melody_note > -90:
 		lead_freq_current = _note_freq(root * 2.0, melody_note)
@@ -367,6 +378,9 @@ func _trigger_step(profile, root, step_tick, step, phrase, melody_markov, chords
 		harmony_freq_current = _note_freq(root * 2.0, harmony_note)
 		harmony_level = 0.65
 		_pluck_string(harmony_freq_current, float(profile.get("harmony_gain", 0.05)) * 0.55, 0.991)
+
+func _emit_beat_hit(type):
+	call_deferred("emit_signal", "beat_hit", type)
 
 func _get_next_markov_note(current_note, markov_matrix):
 	if typeof(markov_matrix) != TYPE_DICTIONARY:

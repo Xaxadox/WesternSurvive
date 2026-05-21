@@ -129,6 +129,8 @@ func _ready():
 	hud.settings_changed.connect(_on_settings_changed)
 	hud.resume_requested.connect(_on_pause_resume_requested)
 	hud.return_to_menu_requested.connect(_return_to_start_menu)
+	if is_instance_valid(music) and not music.beat_hit.is_connected(_on_music_beat_hit):
+		music.beat_hit.connect(_on_music_beat_hit)
 	_load_progress()
 	_apply_settings(progress.get("settings", {}))
 	if is_instance_valid(music):
@@ -185,6 +187,25 @@ func _cut_music_for_game_over():
 	var tween = _create_music_tween()
 	tween.tween_interval(MUSIC_GAME_OVER_SILENCE)
 	tween.tween_method(Callable(self, "_set_runtime_music_volume"), 0.0, next_volume, MUSIC_GAME_OVER_FADE_IN)
+
+func _music_visual_latency():
+	if is_instance_valid(music) and music.generator != null:
+		return maxf(0.0, float(music.generator.buffer_length))
+	return 0.0
+
+func _on_music_beat_hit(type):
+	if hud == null or not hud.has_method("pulse_music_beat"):
+		return
+
+	var delay = _music_visual_latency()
+	if delay <= 0.0:
+		hud.pulse_music_beat(type)
+		return
+
+	get_tree().create_timer(delay, true).timeout.connect(func():
+		if hud != null and hud.has_method("pulse_music_beat"):
+			hud.pulse_music_beat(type)
+	)
 
 func _load_scene_dependencies():
 	enemy_scene = load(ENEMY_SCENE_PATH) as PackedScene
