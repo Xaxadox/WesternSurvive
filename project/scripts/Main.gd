@@ -11,6 +11,11 @@ const WeaponFire = preload("res://scripts/weapons/WeaponFire.gd")
 
 const SAVE_DIR = "F:/WesternSurvive/cache"
 const SAVE_PATH = "F:/WesternSurvive/cache/progress.json"
+const MENU_STAGE_ID = "menu"
+const MUSIC_STAGE_FADE_OUT = 0.28
+const MUSIC_STAGE_FADE_IN = 0.62
+const MUSIC_GAME_OVER_SILENCE = 1.2
+const MUSIC_GAME_OVER_FADE_IN = 1.6
 const MAX_WEAPON_LEVEL = 5
 const BASE_WEAPONS = [
 	"revolver",
@@ -102,6 +107,9 @@ var spawn_batch_timer = 0.0
 var world_item_timer = 0.0
 var pending_window_size = Vector2i(1280, 720)
 var hud_update_timer = 0.0
+var target_music_volume = 0.55
+var current_music_volume = 0.55
+var music_tween: Tween = null
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -124,12 +132,59 @@ func _ready():
 	_load_progress()
 	_apply_settings(progress.get("settings", {}))
 	if is_instance_valid(music):
-		music.configure("menu")
+		music.configure(MENU_STAGE_ID)
+		_set_runtime_music_volume(_music_target_volume())
 	hud.set_stats(player.health, player.max_health, xp, xp_required, level, kills, game_time)
 	hud.set_run_context(_t("select_stage"), _t("select_character"))
 	hud.set_weapons([])
 	hud.set_settings(progress.get("settings", {}))
 	hud.show_start_menu(characters, stages, progress, _start_run)
+
+func _music_target_volume():
+	return clampf(target_music_volume, 0.0, 1.0)
+
+func _set_runtime_music_volume(value):
+	current_music_volume = clampf(float(value), 0.0, 1.0)
+	if is_instance_valid(music):
+		music.set_music_volume(current_music_volume)
+
+func _stop_music_tween():
+	if music_tween != null:
+		music_tween.kill()
+		music_tween = null
+
+func _create_music_tween():
+	_stop_music_tween()
+	music_tween = create_tween()
+	music_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	return music_tween
+
+func _transition_music_to(stage_id, fade_out_duration = MUSIC_STAGE_FADE_OUT, fade_in_duration = MUSIC_STAGE_FADE_IN):
+	if not is_instance_valid(music):
+		return
+
+	var tween = _create_music_tween()
+	var next_stage_id = stage_id if stage_id != "" else MENU_STAGE_ID
+	var next_volume = _music_target_volume()
+	tween.tween_method(Callable(self, "_set_runtime_music_volume"), current_music_volume, 0.0, fade_out_duration)
+	tween.tween_callback(Callable(music, "configure").bind(next_stage_id))
+	tween.tween_method(Callable(self, "_set_runtime_music_volume"), 0.0, next_volume, fade_in_duration)
+
+func _cut_music_for_game_over():
+	if not is_instance_valid(music):
+		return
+
+	_stop_music_tween()
+	_set_runtime_music_volume(0.0)
+	music.configure(MENU_STAGE_ID)
+
+	var next_volume = _music_target_volume()
+	if next_volume <= 0.0:
+		return
+
+	var tween = _create_music_tween()
+	tween.tween_interval(MUSIC_GAME_OVER_SILENCE)
+	tween.tween_method(Callable(self, "_set_runtime_music_volume"), 0.0, next_volume, MUSIC_GAME_OVER_FADE_IN)
 
 func _load_scene_dependencies():
 	enemy_scene = load(ENEMY_SCENE_PATH) as PackedScene
@@ -204,8 +259,7 @@ func _return_to_start_menu():
 	_clear_children(pickups)
 	_clear_children(world_items)
 	_reset_world_to_menu()
-	if is_instance_valid(music):
-		music.configure("menu")
+	_transition_music_to(MENU_STAGE_ID)
 	hud.show_pause(false)
 	hud.hide_game_over()
 	hud.set_stats(player.health, player.max_health, xp, xp_required, level, kills, game_time)
@@ -245,7 +299,7 @@ func _start_run(stage_id, character_id, player_count = 1):
 	_record_played_menu_info(selected_stage.get("id", ""), _party_character_ids())
 	floor.set_stage(selected_stage)
 	_configure_stage_mechanics()
-	music.configure(selected_stage.get("id", "ghost_town"))
+	_transition_music_to(selected_stage.get("id", "ghost_town"))
 	hud.hide_start_menu()
 	hud.hide_game_over()
 	hud.show_pause(false)
@@ -1218,6 +1272,7 @@ func _on_player_died():
 		return
 
 	is_game_over = true
+	_cut_music_for_game_over()
 	get_tree().paused = true
 	hud.show_pause(false)
 	hud.show_game_over(kills, game_time, _localized(selected_stage, "name"), progress.get("unlocked_weapons", []).size())
@@ -1330,8 +1385,9 @@ func _apply_settings(settings):
 		AudioServer.set_bus_mute(master_bus, master_volume <= 0.001)
 		AudioServer.set_bus_volume_db(master_bus, linear_to_db(maxf(master_volume, 0.001)))
 
+	target_music_volume = music_volume
 	if is_instance_valid(music):
-		music.set_music_volume(music_volume)
+		_set_runtime_music_volume(target_music_volume)
 	if hud != null and hud.has_method("set_language"):
 		hud.set_language(language)
 
