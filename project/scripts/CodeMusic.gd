@@ -57,9 +57,7 @@ var stage_profiles = {
 		"pad_gain": 0.025,
 		"kick_gain": 0.055,
 		"snare_gain": 0.018,
-		"hat_gain": 0.025,
-		"lead_decay": 0.72,
-		"wave": "triangle"
+		"hat_gain": 0.025
 	},
 	"ghost_town": {
 		"bpm": 118.0,
@@ -83,9 +81,7 @@ var stage_profiles = {
 		"pad_gain": 0.035,
 		"kick_gain": 0.10,
 		"snare_gain": 0.036,
-		"hat_gain": 0.044,
-		"lead_decay": 0.60,
-		"wave": "triangle"
+		"hat_gain": 0.044
 	},
 	"canyon": {
 		"bpm": 132.0,
@@ -110,9 +106,7 @@ var stage_profiles = {
 		"pad_gain": 0.022,
 		"kick_gain": 0.088,
 		"snare_gain": 0.030,
-		"hat_gain": 0.062,
-		"lead_decay": 0.48,
-		"wave": "saw"
+		"hat_gain": 0.062
 	},
 	"broken_fort": {
 		"bpm": 108.0,
@@ -137,9 +131,7 @@ var stage_profiles = {
 		"pad_gain": 0.038,
 		"kick_gain": 0.12,
 		"snare_gain": 0.052,
-		"hat_gain": 0.032,
-		"lead_decay": 0.66,
-		"wave": "square"
+		"hat_gain": 0.032
 	},
 	"mine": {
 		"bpm": 96.0,
@@ -162,9 +154,7 @@ var stage_profiles = {
 		"pad_gain": 0.055,
 		"kick_gain": 0.095,
 		"snare_gain": 0.025,
-		"hat_gain": 0.024,
-		"lead_decay": 0.84,
-		"wave": "sine"
+		"hat_gain": 0.024
 	},
 	"bonus": {
 		"bpm": 140.0,
@@ -189,9 +179,7 @@ var stage_profiles = {
 		"pad_gain": 0.042,
 		"kick_gain": 0.12,
 		"snare_gain": 0.045,
-		"hat_gain": 0.064,
-		"lead_decay": 0.42,
-		"wave": "saw"
+		"hat_gain": 0.064
 	}
 }
 
@@ -450,11 +438,6 @@ func _harmonica(phase):
 func _note_freq(root, semitone):
 	return root * pow(2.0, float(semitone) / 12.0)
 
-func _pluck_env(pos, length):
-	if pos > length:
-		return 0.0
-	return pow(1.0 - pos / length, 1.8)
-
 func _kick(step, step_pos, gain):
 	var hit = step % 8 == 0 or (stage_id == "canyon" and step % 16 == 12) or (stage_id == "bonus" and step % 8 == 6)
 	if not hit or step_pos > 0.24:
@@ -481,17 +464,6 @@ func _hat(step, step_pos, gain):
 	var noise = rng.randf_range(-1.0, 1.0)
 	var click = _square(phase_hat) * 0.5 + noise * 0.5
 	return click * pow(1.0 - step_pos / 0.08, 2.0) * gain
-
-func _osc(phase, wave):
-	match wave:
-		"saw":
-			return _saw(phase)
-		"square":
-			return _square(phase) * 0.75 + _triangle(phase) * 0.25
-		"sine":
-			return _sine(phase)
-		_:
-			return _triangle(phase)
 
 func _triangle(phase):
 	return 4.0 * abs(phase - 0.5) - 1.0
