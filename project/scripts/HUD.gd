@@ -6,6 +6,7 @@ signal return_to_menu_requested
 
 const UpgradeIconScript = preload("res://scripts/UpgradeIcon.gd")
 const MENU_ATLAS_PATH = "res://assets/menu/western_menu_atlas.png"
+const PAUSE_MENU_SCENE = preload("res://scenes/ui/pause_menu.tscn")
 
 var health_bar
 var xp_bar
@@ -523,51 +524,16 @@ func _update_start_progress_label():
 	progress_label.text = "%s %d/4  |  %s" % [_tr("secret_weapons"), secret_count, bonus_text]
 
 func _build_pause_layer():
-	pause_layer = Control.new()
-	pause_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pause_layer = PAUSE_MENU_SCENE.instantiate()
 	pause_layer.visible = false
 	pause_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(pause_layer)
 
-	var shade = ColorRect.new()
-	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(0, 0, 0, 0.45)
-	pause_layer.add_child(shade)
-
-	var panel = PanelContainer.new()
+	var panel = pause_layer.get_node("Panel")
 	panel.add_theme_stylebox_override("panel", _panel_style(Color("#2d2017")))
-	panel.anchor_left = 0.5
-	panel.anchor_top = 0.5
-	panel.anchor_right = 0.5
-	panel.anchor_bottom = 0.5
-	panel.offset_left = -260
-	panel.offset_top = -220
-	panel.offset_right = 260
-	panel.offset_bottom = 220
-	pause_layer.add_child(panel)
-
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 22)
-	margin.add_theme_constant_override("margin_top", 20)
-	margin.add_theme_constant_override("margin_right", 22)
-	margin.add_theme_constant_override("margin_bottom", 20)
-	panel.add_child(margin)
-
-	var box = VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
-	margin.add_child(box)
-
-	pause_label = Label.new()
+	pause_label = pause_layer.get_node("Panel/Margin/Box/Title")
+	pause_content = pause_layer.get_node("Panel/Margin/Box/Content")
 	pause_label.text = _tr("paused_title")
-	pause_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	pause_label.add_theme_font_size_override("font_size", 32)
-	box.add_child(pause_label)
-
-	pause_content = VBoxContainer.new()
-	pause_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	pause_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	pause_content.add_theme_constant_override("separation", 10)
-	box.add_child(pause_content)
 	_show_pause_mode("home")
 
 func _show_pause_mode(mode):
