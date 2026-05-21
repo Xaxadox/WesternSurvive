@@ -19,6 +19,10 @@ var body_radius = 15.0
 var target_radius = 17.0
 var attack_delay = 0.55
 var knockback = 10.0
+var sprite_path = ""
+var sprite_texture: Texture2D = null
+var sprite_height = 0.0
+var sprite_offset = Vector2.ZERO
 
 var attack_cooldown = 0.0
 
@@ -45,6 +49,10 @@ func setup(data):
 	attack_range = maxf(float(data.get("attack_range", attack_range)), stand_off_range + 4.0)
 	attack_delay = data.get("attack_delay", attack_delay)
 	knockback = data.get("knockback", knockback)
+	sprite_path = str(data.get("sprite", ""))
+	sprite_texture = _load_sprite(sprite_path)
+	sprite_height = float(data.get("sprite_height", 0.0))
+	sprite_offset = data.get("sprite_offset", Vector2.ZERO)
 	queue_redraw()
 
 func _physics_process(delta):
@@ -108,12 +116,39 @@ func _draw():
 	var hp_ratio = clamp(float(health) / float(max_health), 0.0, 1.0)
 
 	draw_circle(Vector2(3, 8), 14, Color(0, 0, 0, 0.24))
-	draw_circle(Vector2.ZERO, 15, body_color)
-	draw_circle(Vector2(0, -8), 9, Color("#d38c62"))
-	draw_rect(Rect2(-15, -17, 30, 5), hat_color)
-	draw_rect(Rect2(-8, -23, 16, 8), hat_color)
-	draw_line(Vector2(-7, 4), Vector2(9, 8), Color("#c6a05a"), 3)
+	if sprite_texture != null and sprite_height > 0.0:
+		_draw_sprite(sprite_texture, sprite_height, sprite_offset, Color.WHITE)
+	else:
+		draw_circle(Vector2.ZERO, 15, body_color)
+		draw_circle(Vector2(0, -8), 9, Color("#d38c62"))
+		draw_rect(Rect2(-15, -17, 30, 5), hat_color)
+		draw_rect(Rect2(-8, -23, 16, 8), hat_color)
+		draw_line(Vector2(-7, 4), Vector2(9, 8), Color("#c6a05a"), 3)
 
 	if hp_ratio < 1.0:
-		draw_rect(Rect2(-16, 20, 32, 4), Color(0, 0, 0, 0.35))
-		draw_rect(Rect2(-16, 20, 32 * hp_ratio, 4), Color("#f2d36b"))
+		var bar_y = 20.0
+		if sprite_texture != null and sprite_height > 0.0:
+			bar_y = maxf(20.0, sprite_offset.y + sprite_height * 0.5 + 4.0)
+		draw_rect(Rect2(-16, bar_y, 32, 4), Color(0, 0, 0, 0.35))
+		draw_rect(Rect2(-16, bar_y, 32 * hp_ratio, 4), Color("#f2d36b"))
+
+func _load_sprite(path):
+	if path == "":
+		return null
+
+	if ResourceLoader.exists(path):
+		var loaded = load(path)
+		if loaded is Texture2D:
+			return loaded
+
+	var file_path = ProjectSettings.globalize_path(path) if path.begins_with("res://") else path
+	var image = Image.new()
+	if image.load(file_path) != OK:
+		return null
+	return ImageTexture.create_from_image(image)
+
+func _draw_sprite(texture, height, offset, modulate):
+	var aspect = float(texture.get_width()) / float(maxi(texture.get_height(), 1))
+	var size = Vector2(height * aspect, height)
+	var rect = Rect2(offset - size * 0.5, size)
+	draw_texture_rect(texture, rect, false, modulate)

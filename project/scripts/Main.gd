@@ -674,7 +674,7 @@ func _roll_enemy_data():
 	var roll = rng.randf()
 
 	if selected_stage.get("id", "") == "bonus" and roll > 0.86:
-		return {
+		return _with_enemy_visual({
 			"health": int(52 * pressure * health_mult),
 			"speed": (90.0 + game_time * 0.10) * speed_mult,
 			"damage": 20,
@@ -684,10 +684,10 @@ func _roll_enemy_data():
 			"hat": Color("#d5b653"),
 			"attack_delay": 0.66,
 			"knockback": 5.0
-		}
+		})
 
 	if game_time > 80.0 and roll > 0.78:
-		return {
+		return _with_enemy_visual({
 			"health": int(34 * pressure * health_mult),
 			"speed": (72.0 + game_time * 0.08) * speed_mult,
 			"damage": 16,
@@ -697,10 +697,10 @@ func _roll_enemy_data():
 			"hat": Color("#19110d"),
 			"attack_delay": 0.72,
 			"knockback": 6.0
-		}
+		})
 
 	if game_time > 28.0 and roll > 0.58:
-		return {
+		return _with_enemy_visual({
 			"health": int(13 * pressure * health_mult),
 			"speed": (155.0 + game_time * 0.13) * speed_mult,
 			"damage": 7,
@@ -710,9 +710,9 @@ func _roll_enemy_data():
 			"hat": Color("#3a261b"),
 			"attack_delay": 0.42,
 			"knockback": 13.0
-		}
+		})
 
-	return {
+	return _with_enemy_visual({
 		"health": int(16 * pressure * health_mult),
 		"speed": (98.0 + game_time * 0.10) * speed_mult,
 		"damage": 9,
@@ -722,6 +722,24 @@ func _roll_enemy_data():
 		"hat": Color("#2c1a12"),
 		"attack_delay": 0.58,
 		"knockback": 10.0
+	})
+
+func _with_enemy_visual(data):
+	data.merge(_enemy_visual_data(), true)
+	return data
+
+func _enemy_visual_data():
+	var stage_id = selected_stage.get("id", "")
+	if stage_id == "mine" or stage_id == "bonus":
+		return {
+			"sprite": "res://assets/enemies/ghost.png",
+			"sprite_height": 44.0,
+			"sprite_offset": Vector2(0, -5)
+		}
+	return {
+		"sprite": "res://assets/enemies/bandit.png",
+		"sprite_height": 42.0,
+		"sprite_offset": Vector2(0, -5)
 	}
 
 func _fire_weapon(weapon_id, shooter):

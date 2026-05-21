@@ -7,6 +7,14 @@ signal quit_requested
 
 const UpgradeIconScript = preload("res://scripts/UpgradeIcon.gd")
 const MENU_ATLAS_PATH = "res://assets/menu/western_menu_atlas.png"
+const MENU_ICON_PATHS = {
+	"play": "res://assets/menu/icons/play.png",
+	"settings": "res://assets/menu/icons/settings.png",
+	"quit": "res://assets/menu/icons/quit.png",
+	"audio": "res://assets/menu/icons/audio.png",
+	"video": "res://assets/menu/icons/video.png",
+	"language": "res://assets/menu/icons/language.png"
+}
 const PAUSE_MENU_SCENE = preload("res://scenes/ui/pause_menu.tscn")
 const LEVEL_UP_MENU_SCENE = preload("res://scenes/ui/level_up_menu.tscn")
 const START_MENU_SCENE = preload("res://scenes/ui/start_menu.tscn")
@@ -70,6 +78,7 @@ var resolution_values = ["960x540", "1280x720", "1366x768", "1600x900", "1920x10
 var language_values = ["pt", "en"]
 var current_language = "pt"
 var menu_atlas_texture = null
+var menu_icon_textures = {}
 var current_settings = {
 	"master_volume": 0.85,
 	"music_volume": 0.55,
@@ -240,9 +249,9 @@ func _build_start_home():
 	spacer.custom_minimum_size = Vector2(0, 18)
 	start_content.add_child(spacer)
 
-	_add_menu_button(start_content, _tr("play"), Callable(self, "_show_start_mode").bind("characters"), 360, 9, 74, 56)
-	_add_menu_button(start_content, _tr("settings"), Callable(self, "_show_start_mode").bind("settings"), 360, 11, 74, 56)
-	_add_menu_button(start_content, _tr("quit"), Callable(self, "_on_quit_pressed"), 360, 15, 74, 56)
+	_add_menu_button(start_content, _tr("play"), Callable(self, "_show_start_mode").bind("characters"), 360, "play", 74, 56)
+	_add_menu_button(start_content, _tr("settings"), Callable(self, "_show_start_mode").bind("settings"), 360, "settings", 74, 56)
+	_add_menu_button(start_content, _tr("quit"), Callable(self, "_on_quit_pressed"), 360, "quit", 74, 56)
 
 func _build_settings_menu():
 	start_title_label.text = _tr("settings")
@@ -250,9 +259,9 @@ func _build_settings_menu():
 	spacer.custom_minimum_size = Vector2(0, 18)
 	start_content.add_child(spacer)
 
-	_add_menu_button(start_content, _tr("audio"), Callable(self, "_show_start_mode").bind("audio"), 360, 12, 72, 54)
-	_add_menu_button(start_content, _tr("video"), Callable(self, "_show_start_mode").bind("video"), 360, 11, 72, 54)
-	_add_menu_button(start_content, _tr("language"), Callable(self, "_show_start_mode").bind("language"), 360, 10, 72, 54)
+	_add_menu_button(start_content, _tr("audio"), Callable(self, "_show_start_mode").bind("audio"), 360, "audio", 72, 54)
+	_add_menu_button(start_content, _tr("video"), Callable(self, "_show_start_mode").bind("video"), 360, "video", 72, 54)
+	_add_menu_button(start_content, _tr("language"), Callable(self, "_show_start_mode").bind("language"), 360, "language", 72, 54)
 	_add_menu_button(start_content, _tr("back"), Callable(self, "_show_start_mode").bind("home"), 260, -1, 48, 0)
 
 func _build_character_menu():
@@ -262,7 +271,9 @@ func _build_character_menu():
 
 	selected_character_index = clampi(selected_character_index, 0, maxi(start_characters.size() - 1, 0))
 	for i in range(start_characters.size()):
-		var button = _add_list_button(character_list, Callable(self, "_select_character").bind(i), i, 82, 58)
+		var character = start_characters[i]
+		var icon_path = str(character.get("menu_icon", character.get("sprite", "")))
+		var button = _add_list_button(character_list, Callable(self, "_select_character").bind(i), icon_path, 82, 58)
 		button.set_meta("entry_index", i)
 
 	selection_info_label = _add_selection_info(start_content)
@@ -279,7 +290,9 @@ func _build_stage_menu():
 
 	selected_stage_index = clampi(selected_stage_index, 0, maxi(start_stages.size() - 1, 0))
 	for i in range(start_stages.size()):
-		var button = _add_list_button(stage_list, Callable(self, "_select_stage").bind(i), 4 + i, 92, 72)
+		var stage = start_stages[i]
+		var icon_path = str(stage.get("icon", ""))
+		var button = _add_list_button(stage_list, Callable(self, "_select_stage").bind(i), icon_path, 92, 72)
 		button.set_meta("entry_index", i)
 
 	selection_info_label = _add_selection_info(start_content)
@@ -332,13 +345,13 @@ func _add_scroll_list(parent):
 	scroll.add_child(list)
 	return list
 
-func _add_list_button(parent, callback, icon_index = -1, height = 58, icon_size = 0):
+func _add_list_button(parent, callback, icon_ref = -1, height = 58, icon_size = 0):
 	var button = Button.new()
 	button.custom_minimum_size = Vector2(0, height)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.add_theme_font_size_override("font_size", 14)
-	_apply_button_icon(button, icon_index, icon_size)
+	_apply_button_icon(button, icon_ref, icon_size)
 	button.pressed.connect(callback)
 	parent.add_child(button)
 	return button
@@ -360,20 +373,18 @@ func _add_button_row(parent):
 	parent.add_child(row)
 	return row
 
-func _add_menu_button(parent, text, callback, width, icon_index = -1, height = 44, icon_size = 0):
+func _add_menu_button(parent, text, callback, width, icon_ref = -1, height = 44, icon_size = 0):
 	var button = Button.new()
 	button.text = text
 	button.custom_minimum_size = Vector2(width, height)
 	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_apply_button_icon(button, icon_index, icon_size)
+	_apply_button_icon(button, icon_ref, icon_size)
 	button.pressed.connect(callback)
 	parent.add_child(button)
 	return button
 
-func _apply_button_icon(button, icon_index, icon_size = 0):
-	if icon_index < 0 or menu_atlas_texture == null:
-		return
-	var texture = _menu_atlas_region(icon_index)
+func _apply_button_icon(button, icon_ref, icon_size = 0):
+	var texture = _button_icon_texture(icon_ref)
 	if texture == null:
 		return
 	button.icon = texture
@@ -381,6 +392,39 @@ func _apply_button_icon(button, icon_index, icon_size = 0):
 	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
 	button.add_theme_constant_override("h_separation", 16)
+	if icon_size > 0:
+		button.add_theme_constant_override("icon_max_width", icon_size)
+
+func _button_icon_texture(icon_ref):
+	match typeof(icon_ref):
+		TYPE_STRING:
+			var path = str(MENU_ICON_PATHS.get(icon_ref, icon_ref))
+			return _texture_from_path(path)
+		TYPE_INT:
+			if int(icon_ref) < 0:
+				return null
+			return _menu_atlas_region(int(icon_ref))
+		_:
+			return null
+
+func _texture_from_path(path):
+	if path == "":
+		return null
+	if menu_icon_textures.has(path):
+		return menu_icon_textures[path]
+
+	var texture = null
+	if ResourceLoader.exists(path):
+		var loaded = load(path)
+		if loaded is Texture2D:
+			texture = loaded
+	if texture == null:
+		var file_path = ProjectSettings.globalize_path(path) if path.begins_with("res://") else path
+		var image = Image.new()
+		if image.load(file_path) == OK:
+			texture = ImageTexture.create_from_image(image)
+	menu_icon_textures[path] = texture
+	return texture
 
 func _menu_atlas_region(index):
 	if menu_atlas_texture == null:
@@ -537,9 +581,9 @@ func _show_pause_mode(mode):
 			_add_video_controls(pause_content)
 			_add_menu_button(pause_content, _tr("back"), Callable(self, "_show_pause_mode").bind("home"), 220)
 		_:
-			_add_menu_button(pause_content, _tr("resume"), Callable(self, "_on_resume_pressed"), 260, 9)
-			_add_menu_button(pause_content, _tr("audio"), Callable(self, "_show_pause_mode").bind("audio"), 260, 12)
-			_add_menu_button(pause_content, _tr("video"), Callable(self, "_show_pause_mode").bind("video"), 260, 11)
+			_add_menu_button(pause_content, _tr("resume"), Callable(self, "_on_resume_pressed"), 260, "play")
+			_add_menu_button(pause_content, _tr("audio"), Callable(self, "_show_pause_mode").bind("audio"), 260, "audio")
+			_add_menu_button(pause_content, _tr("video"), Callable(self, "_show_pause_mode").bind("video"), 260, "video")
 			_add_menu_button(pause_content, _tr("back_to_menu"), Callable(self, "_on_return_to_menu_pressed"), 260)
 
 func _on_resume_pressed():

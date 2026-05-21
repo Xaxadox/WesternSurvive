@@ -23,7 +23,11 @@ static var CHARACTER_DATA = [
 		"outline": Color("#f2d36b"),
 		"badge": Color("#f2d36b"),
 		"visual_weapon": "revolver",
-		"silhouette": "gunslinger"
+		"silhouette": "gunslinger",
+		"sprite": "res://assets/characters/gunslinger.png",
+		"menu_icon": "res://assets/menu/characters/gunslinger.png",
+		"sprite_height": 72.0,
+		"sprite_offset": Vector2(0, -10)
 	},
 	{
 		"id": "sheriff",
@@ -47,7 +51,11 @@ static var CHARACTER_DATA = [
 		"outline": Color("#8fd3ff"),
 		"badge": Color("#ffd56a"),
 		"visual_weapon": "shotgun",
-		"silhouette": "sheriff"
+		"silhouette": "sheriff",
+		"sprite": "res://assets/characters/sheriff.png",
+		"menu_icon": "res://assets/menu/characters/sheriff.png",
+		"sprite_height": 72.0,
+		"sprite_offset": Vector2(0, -10)
 	},
 	{
 		"id": "bounty_hunter",
@@ -71,7 +79,11 @@ static var CHARACTER_DATA = [
 		"outline": Color("#f59be7"),
 		"badge": Color("#f59be7"),
 		"visual_weapon": "rifle",
-		"silhouette": "hunter"
+		"silhouette": "hunter",
+		"sprite": "res://assets/characters/bounty_hunter.png",
+		"menu_icon": "res://assets/menu/characters/bounty_hunter.png",
+		"sprite_height": 56.0,
+		"sprite_offset": Vector2(0, -8)
 	},
 	{
 		"id": "shaman",
@@ -95,7 +107,11 @@ static var CHARACTER_DATA = [
 		"outline": Color("#9be8d4"),
 		"badge": Color("#9be8d4"),
 		"visual_weapon": "lantern",
-		"silhouette": "healer"
+		"silhouette": "healer",
+		"sprite": "res://assets/characters/shaman.png",
+		"menu_icon": "res://assets/menu/characters/shaman.png",
+		"sprite_height": 68.0,
+		"sprite_offset": Vector2(0, -10)
 	}
 ]
 
@@ -109,6 +125,7 @@ static var STAGE_DATA = [
 		"floor": Color("#c99052"),
 		"grid": Color(0.55, 0.31, 0.15, 0.14),
 		"accent": Color("#7a4a27"),
+		"icon": "res://assets/menu/stages/ghost_town.png",
 		"enemy_health": 1.0,
 		"enemy_speed": 1.0,
 		"spawn_mult": 1.0,
@@ -125,6 +142,7 @@ static var STAGE_DATA = [
 		"floor": Color("#b45f3c"),
 		"grid": Color(0.33, 0.12, 0.08, 0.16),
 		"accent": Color("#6a2720"),
+		"icon": "res://assets/menu/stages/canyon.png",
 		"enemy_health": 1.10,
 		"enemy_speed": 1.10,
 		"spawn_mult": 0.95,
@@ -141,6 +159,7 @@ static var STAGE_DATA = [
 		"floor": Color("#a97945"),
 		"grid": Color(0.30, 0.18, 0.10, 0.18),
 		"accent": Color("#4f3420"),
+		"icon": "res://assets/menu/stages/broken_fort.png",
 		"enemy_health": 1.16,
 		"enemy_speed": 1.02,
 		"spawn_mult": 1.06,
@@ -157,6 +176,7 @@ static var STAGE_DATA = [
 		"floor": Color("#6f5d4b"),
 		"grid": Color(0.12, 0.09, 0.07, 0.22),
 		"accent": Color("#c59b4f"),
+		"icon": "res://assets/menu/stages/mine.png",
 		"enemy_health": 1.25,
 		"enemy_speed": 0.95,
 		"spawn_mult": 1.12,
@@ -174,6 +194,7 @@ static var STAGE_DATA = [
 		"floor": Color("#393b4f"),
 		"grid": Color(0.72, 0.61, 0.23, 0.16),
 		"accent": Color("#f0c85a"),
+		"icon": "res://assets/menu/stages/bonus.png",
 		"enemy_health": 1.42,
 		"enemy_speed": 1.18,
 		"spawn_mult": 1.22,

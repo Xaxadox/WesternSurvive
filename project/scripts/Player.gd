@@ -19,6 +19,10 @@ var outline_color = Color("#f2d36b")
 var badge_color = Color("#f2d36b")
 var weapon_visual = "revolver"
 var silhouette = "gunslinger"
+var sprite_path = ""
+var sprite_texture: Texture2D = null
+var sprite_height = 0.0
+var sprite_offset = Vector2.ZERO
 
 var invulnerable_time = 0.0
 var player_marker_colors = [
@@ -48,6 +52,10 @@ func configure(data, index = 0):
 	badge_color = data.get("badge", badge_color)
 	weapon_visual = str(data.get("visual_weapon", weapon_visual))
 	silhouette = str(data.get("silhouette", silhouette))
+	sprite_path = str(data.get("sprite", ""))
+	sprite_texture = _load_sprite(sprite_path)
+	sprite_height = float(data.get("sprite_height", 0.0))
+	sprite_offset = data.get("sprite_offset", Vector2.ZERO)
 	alive = true
 	invulnerable_time = 0.0
 	velocity = Vector2.ZERO
@@ -192,10 +200,41 @@ func _draw():
 	draw_circle(Vector2(4, 8), 18, Color(0, 0, 0, 0.24))
 	draw_circle(Vector2.ZERO, 21, Color(outline_color.r, outline_color.g, outline_color.b, 0.26))
 	draw_arc(Vector2.ZERO, 22, -PI * 0.5, PI * 1.5, 40, marker, 3.0)
-	_draw_body(coat, hat, scarf)
-	_draw_weapon(aim_direction.normalized())
-	draw_circle(Vector2(-15, -29), 5, marker)
-	draw_circle(Vector2(-15, -29), 2, Color("#20140e"))
+	if sprite_texture != null and sprite_height > 0.0:
+		_draw_sprite(sprite_texture, sprite_height, sprite_offset, Color(1.25, 1.12, 0.72, 1.0) if blink else Color.WHITE)
+	else:
+		_draw_body(coat, hat, scarf)
+		_draw_weapon(aim_direction.normalized())
+
+	var marker_position = _marker_position()
+	draw_circle(marker_position, 5, marker)
+	draw_circle(marker_position, 2, Color("#20140e"))
+
+func _load_sprite(path):
+	if path == "":
+		return null
+
+	if ResourceLoader.exists(path):
+		var loaded = load(path)
+		if loaded is Texture2D:
+			return loaded
+
+	var file_path = ProjectSettings.globalize_path(path) if path.begins_with("res://") else path
+	var image = Image.new()
+	if image.load(file_path) != OK:
+		return null
+	return ImageTexture.create_from_image(image)
+
+func _draw_sprite(texture, height, offset, modulate):
+	var aspect = float(texture.get_width()) / float(maxi(texture.get_height(), 1))
+	var size = Vector2(height * aspect, height)
+	var rect = Rect2(offset - size * 0.5, size)
+	draw_texture_rect(texture, rect, false, modulate)
+
+func _marker_position():
+	if sprite_texture == null or sprite_height <= 0.0:
+		return Vector2(-15, -29)
+	return sprite_offset + Vector2(-sprite_height * 0.24, -sprite_height * 0.48)
 
 func _draw_body(coat, hat, scarf):
 	match silhouette:
