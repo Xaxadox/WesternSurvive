@@ -9,6 +9,7 @@ const STAGE_OBSTACLE_SCENE_PATH = "res://scenes/stage_obstacle.tscn"
 const SpatialUtils = preload("res://scripts/SpatialUtils.gd")
 const GameData = preload("res://scripts/GameData.gd")
 const WeaponFire = preload("res://scripts/weapons/WeaponFire.gd")
+const WeaponSfx = preload("res://scripts/WeaponSfx.gd")
 
 const SAVE_DIR = "F:/WesternSurvive/cache"
 const SAVE_PATH = "F:/WesternSurvive/cache/progress.json"
@@ -115,11 +116,13 @@ var hud_update_timer = 0.0
 var target_music_volume = 0.55
 var current_music_volume = 0.55
 var music_tween: Tween = null
+var weapon_sfx = null
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	rng.randomize()
 	_load_scene_dependencies()
+	_setup_weapon_sfx()
 	get_tree().paused = false
 	if world != null:
 		world.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -220,6 +223,11 @@ func _load_scene_dependencies():
 	player_scene = load(PLAYER_SCENE_PATH) as PackedScene
 	world_item_scene = load(WORLD_ITEM_SCENE_PATH) as PackedScene
 	stage_obstacle_scene = load(STAGE_OBSTACLE_SCENE_PATH) as PackedScene
+
+func _setup_weapon_sfx():
+	weapon_sfx = WeaponSfx.new()
+	weapon_sfx.name = "WeaponSfx"
+	add_child(weapon_sfx)
 
 func _process(delta):
 	if get_tree().paused:
@@ -743,7 +751,14 @@ func _enemy_visual_data():
 	}
 
 func _fire_weapon(weapon_id, shooter):
+	var projectile_count = projectiles.get_child_count()
 	WeaponFire.fire(self, weapon_id, shooter)
+	if projectiles.get_child_count() > projectile_count:
+		_play_weapon_sound(weapon_id)
+
+func _play_weapon_sound(weapon_id):
+	if weapon_sfx != null and is_instance_valid(weapon_sfx):
+		weapon_sfx.play_weapon(weapon_id)
 
 func _fire_projectile(shooter, direction, damage, speed, pierce, lifetime, options):
 	var safe_direction = direction.normalized()
