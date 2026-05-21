@@ -2,32 +2,41 @@ extends Node
 
 const SAMPLE_RATE = 44100
 const MAX_PLAYERS = 18
+const PREWARM_PLAYERS = 8
+const TARGET_PEAK = 0.92
 
 var streams = {}
 var rng = RandomNumberGenerator.new()
 var players = []
 
 var sound_profiles = {
-	"revolver": {"duration": 0.16, "volume_db": -10.0, "pitch_jitter": 0.035},
-	"golden_revolver": {"duration": 0.18, "volume_db": -9.0, "pitch_jitter": 0.04},
-	"shotgun": {"duration": 0.32, "volume_db": -8.0, "pitch_jitter": 0.025},
-	"coach_gun": {"duration": 0.38, "volume_db": -7.0, "pitch_jitter": 0.025},
-	"rifle": {"duration": 0.22, "volume_db": -9.0, "pitch_jitter": 0.025},
-	"rail_spike": {"duration": 0.30, "volume_db": -8.5, "pitch_jitter": 0.02},
-	"dynamite": {"duration": 0.34, "volume_db": -12.0, "pitch_jitter": 0.035},
-	"fire_bottle": {"duration": 0.42, "volume_db": -12.0, "pitch_jitter": 0.03},
-	"lasso": {"duration": 0.30, "volume_db": -13.0, "pitch_jitter": 0.04},
-	"knife": {"duration": 0.18, "volume_db": -13.5, "pitch_jitter": 0.06},
-	"horseshoe": {"duration": 0.26, "volume_db": -12.0, "pitch_jitter": 0.05},
-	"ghost_lantern": {"duration": 0.44, "volume_db": -12.5, "pitch_jitter": 0.03}
+	"revolver": {"duration": 0.16, "volume_db": -2.0, "pitch_jitter": 0.035},
+	"golden_revolver": {"duration": 0.18, "volume_db": -1.0, "pitch_jitter": 0.04},
+	"shotgun": {"duration": 0.32, "volume_db": -1.0, "pitch_jitter": 0.025},
+	"coach_gun": {"duration": 0.38, "volume_db": 0.0, "pitch_jitter": 0.025},
+	"rifle": {"duration": 0.22, "volume_db": -1.5, "pitch_jitter": 0.025},
+	"rail_spike": {"duration": 0.30, "volume_db": -1.0, "pitch_jitter": 0.02},
+	"dynamite": {"duration": 0.34, "volume_db": -3.0, "pitch_jitter": 0.035},
+	"fire_bottle": {"duration": 0.42, "volume_db": -3.0, "pitch_jitter": 0.03},
+	"lasso": {"duration": 0.30, "volume_db": -4.0, "pitch_jitter": 0.04},
+	"knife": {"duration": 0.18, "volume_db": -4.0, "pitch_jitter": 0.06},
+	"horseshoe": {"duration": 0.26, "volume_db": -3.0, "pitch_jitter": 0.05},
+	"ghost_lantern": {"duration": 0.44, "volume_db": -3.0, "pitch_jitter": 0.03}
 }
 
 func _ready():
 	rng.randomize()
+	_ensure_streams()
+	for i in range(PREWARM_PLAYERS):
+		_create_player()
+
+func _ensure_streams():
 	for weapon_id in sound_profiles.keys():
-		streams[weapon_id] = _build_stream(weapon_id)
+		if not streams.has(weapon_id):
+			streams[weapon_id] = _build_stream(weapon_id)
 
 func play_weapon(weapon_id):
+	_ensure_streams()
 	var stream = streams.get(weapon_id, null)
 	if stream == null:
 		return
@@ -45,7 +54,11 @@ func _available_player():
 		if not player.playing:
 			return player
 
+	return _create_player()
+
+func _create_player():
 	var player = AudioStreamPlayer.new()
+	player.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(player)
 	players.append(player)
 	if players.size() > MAX_PLAYERS:
@@ -60,10 +73,19 @@ func _build_stream(weapon_id):
 	var frames = maxi(1, int(SAMPLE_RATE * duration))
 	var data = PackedByteArray()
 	data.resize(frames * 2)
+	var samples = PackedFloat32Array()
+	samples.resize(frames)
+	var peak = 0.0
 
 	for i in range(frames):
 		var t = float(i) / float(SAMPLE_RATE)
 		var sample = clampf(_sample_weapon(weapon_id, t, duration, i), -1.0, 1.0)
+		samples[i] = sample
+		peak = maxf(peak, absf(sample))
+
+	var gain = TARGET_PEAK / peak if peak > 0.001 else 1.0
+	for i in range(frames):
+		var sample = clampf(samples[i] * gain, -1.0, 1.0)
 		data.encode_s16(i * 2, int(sample * 32767.0))
 
 	var stream = AudioStreamWAV.new()
@@ -167,4 +189,4 @@ func _attack(t, attack_time):
 
 func _noise(index, seed):
 	var value = sin((float(index) + seed) * 12.9898) * 43758.5453
-	return fmod(value, 1.0) * 2.0 - 1.0
+	return (value - floor(value)) * 2.0 - 1.0
