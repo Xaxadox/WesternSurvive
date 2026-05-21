@@ -3,6 +3,7 @@ extends CanvasLayer
 signal settings_changed(settings)
 signal resume_requested
 signal return_to_menu_requested
+signal quit_requested
 
 const UpgradeIconScript = preload("res://scripts/UpgradeIcon.gd")
 const MENU_ATLAS_PATH = "res://assets/menu/western_menu_atlas.png"
@@ -168,7 +169,7 @@ func _build_hud():
 	var weapons_margin = MarginContainer.new()
 	weapons_margin.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	weapons_margin.offset_left = 22
-	weapons_margin.offset_top = -78
+	weapons_margin.offset_top = -106
 	weapons_margin.offset_right = -22
 	weapons_margin.offset_bottom = -18
 	root.add_child(weapons_margin)
@@ -180,6 +181,8 @@ func _build_hud():
 	weapon_label = Label.new()
 	weapon_label.add_theme_font_size_override("font_size", 15)
 	weapon_label.text = "%s: -" % _tr("build")
+	weapon_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	weapon_label.custom_minimum_size = Vector2(0, 44)
 	weapons_panel.add_child(weapon_label)
 
 	notice_label = Label.new()
@@ -220,25 +223,37 @@ func _show_start_mode(mode):
 			_build_character_menu()
 		"stages":
 			_build_stage_menu()
+		"settings":
+			_build_settings_menu()
 		"language":
-			_build_language_menu(start_content, true)
+			_build_language_menu(start_content, true, "settings")
 		"video":
-			_build_video_menu(start_content, true)
+			_build_video_menu(start_content, true, "settings")
 		"audio":
-			_build_audio_menu(start_content, true)
+			_build_audio_menu(start_content, true, "settings")
 		_:
 			_build_start_home()
 
 func _build_start_home():
 	start_title_label.text = "Western Survive"
 	var spacer = Control.new()
-	spacer.custom_minimum_size = Vector2(0, 26)
+	spacer.custom_minimum_size = Vector2(0, 18)
 	start_content.add_child(spacer)
 
-	_add_menu_button(start_content, _tr("play"), Callable(self, "_show_start_mode").bind("characters"), 300, 9)
-	_add_menu_button(start_content, _tr("language"), Callable(self, "_show_start_mode").bind("language"), 300, 10)
-	_add_menu_button(start_content, _tr("video"), Callable(self, "_show_start_mode").bind("video"), 300, 11)
-	_add_menu_button(start_content, _tr("audio"), Callable(self, "_show_start_mode").bind("audio"), 300, 12)
+	_add_menu_button(start_content, _tr("play"), Callable(self, "_show_start_mode").bind("characters"), 360, 9, 74, 56)
+	_add_menu_button(start_content, _tr("settings"), Callable(self, "_show_start_mode").bind("settings"), 360, 11, 74, 56)
+	_add_menu_button(start_content, _tr("quit"), Callable(self, "_on_quit_pressed"), 360, 15, 74, 56)
+
+func _build_settings_menu():
+	start_title_label.text = _tr("settings")
+	var spacer = Control.new()
+	spacer.custom_minimum_size = Vector2(0, 18)
+	start_content.add_child(spacer)
+
+	_add_menu_button(start_content, _tr("audio"), Callable(self, "_show_start_mode").bind("audio"), 360, 12, 72, 54)
+	_add_menu_button(start_content, _tr("video"), Callable(self, "_show_start_mode").bind("video"), 360, 11, 72, 54)
+	_add_menu_button(start_content, _tr("language"), Callable(self, "_show_start_mode").bind("language"), 360, 10, 72, 54)
+	_add_menu_button(start_content, _tr("back"), Callable(self, "_show_start_mode").bind("home"), 260, -1, 48, 0)
 
 func _build_character_menu():
 	start_title_label.text = _tr("choose_character")
@@ -247,7 +262,7 @@ func _build_character_menu():
 
 	selected_character_index = clampi(selected_character_index, 0, maxi(start_characters.size() - 1, 0))
 	for i in range(start_characters.size()):
-		var button = _add_list_button(character_list, Callable(self, "_select_character").bind(i), i)
+		var button = _add_list_button(character_list, Callable(self, "_select_character").bind(i), i, 82, 58)
 		button.set_meta("entry_index", i)
 
 	selection_info_label = _add_selection_info(start_content)
@@ -264,7 +279,7 @@ func _build_stage_menu():
 
 	selected_stage_index = clampi(selected_stage_index, 0, maxi(start_stages.size() - 1, 0))
 	for i in range(start_stages.size()):
-		var button = _add_list_button(stage_list, Callable(self, "_select_stage").bind(i), 4 + i)
+		var button = _add_list_button(stage_list, Callable(self, "_select_stage").bind(i), 4 + i, 92, 72)
 		button.set_meta("entry_index", i)
 
 	selection_info_label = _add_selection_info(start_content)
@@ -273,23 +288,23 @@ func _build_stage_menu():
 	start_button = _add_menu_button(row, _tr("start"), Callable(self, "_on_start_pressed"), 220)
 	_update_start_buttons()
 
-func _build_language_menu(parent, show_back):
+func _build_language_menu(parent, show_back, back_mode = "home"):
 	start_title_label.text = _tr("language") if parent == start_content else _tr("paused")
 	_add_language_controls(parent)
 	if show_back:
-		_add_menu_button(parent, _tr("back"), Callable(self, "_show_start_mode").bind("home"), 220)
+		_add_menu_button(parent, _tr("back"), Callable(self, "_show_start_mode").bind(back_mode), 220)
 
-func _build_video_menu(parent, show_back):
+func _build_video_menu(parent, show_back, back_mode = "home"):
 	start_title_label.text = _tr("video") if parent == start_content else _tr("paused")
 	_add_video_controls(parent)
 	if show_back:
-		_add_menu_button(parent, _tr("back"), Callable(self, "_show_start_mode").bind("home"), 220)
+		_add_menu_button(parent, _tr("back"), Callable(self, "_show_start_mode").bind(back_mode), 220)
 
-func _build_audio_menu(parent, show_back):
+func _build_audio_menu(parent, show_back, back_mode = "home"):
 	start_title_label.text = _tr("audio") if parent == start_content else _tr("paused")
 	_add_audio_controls(parent)
 	if show_back:
-		_add_menu_button(parent, _tr("back"), Callable(self, "_show_start_mode").bind("home"), 220)
+		_add_menu_button(parent, _tr("back"), Callable(self, "_show_start_mode").bind(back_mode), 220)
 
 func _add_section_title(parent, text):
 	var label = Label.new()
@@ -317,13 +332,13 @@ func _add_scroll_list(parent):
 	scroll.add_child(list)
 	return list
 
-func _add_list_button(parent, callback, icon_index = -1):
+func _add_list_button(parent, callback, icon_index = -1, height = 58, icon_size = 0):
 	var button = Button.new()
-	button.custom_minimum_size = Vector2(0, 58)
+	button.custom_minimum_size = Vector2(0, height)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.add_theme_font_size_override("font_size", 14)
-	_apply_button_icon(button, icon_index)
+	_apply_button_icon(button, icon_index, icon_size)
 	button.pressed.connect(callback)
 	parent.add_child(button)
 	return button
@@ -345,17 +360,17 @@ func _add_button_row(parent):
 	parent.add_child(row)
 	return row
 
-func _add_menu_button(parent, text, callback, width, icon_index = -1):
+func _add_menu_button(parent, text, callback, width, icon_index = -1, height = 44, icon_size = 0):
 	var button = Button.new()
 	button.text = text
-	button.custom_minimum_size = Vector2(width, 44)
+	button.custom_minimum_size = Vector2(width, height)
 	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_apply_button_icon(button, icon_index)
+	_apply_button_icon(button, icon_index, icon_size)
 	button.pressed.connect(callback)
 	parent.add_child(button)
 	return button
 
-func _apply_button_icon(button, icon_index):
+func _apply_button_icon(button, icon_index, icon_size = 0):
 	if icon_index < 0 or menu_atlas_texture == null:
 		return
 	var texture = _menu_atlas_region(icon_index)
@@ -364,6 +379,8 @@ func _apply_button_icon(button, icon_index):
 	button.icon = texture
 	button.expand_icon = true
 	button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+	button.add_theme_constant_override("h_separation", 16)
 
 func _menu_atlas_region(index):
 	if menu_atlas_texture == null:
@@ -530,6 +547,9 @@ func _on_resume_pressed():
 
 func _on_return_to_menu_pressed():
 	return_to_menu_requested.emit()
+
+func _on_quit_pressed():
+	quit_requested.emit()
 
 func _build_level_layer():
 	level_layer = LEVEL_UP_MENU_SCENE.instantiate()
@@ -890,6 +910,10 @@ func _tr(key):
 			return "Choose your survivor and stage" if english else "Escolha seu sobrevivente e a fase"
 		"play":
 			return "Play" if english else "Jogar"
+		"settings":
+			return "Settings" if english else "Configuracoes"
+		"quit":
+			return "Quit" if english else "Sair"
 		"video":
 			return "Video" if english else "Video"
 		"audio":
@@ -969,11 +993,11 @@ func set_weapons(summary):
 		weapon_label.text = "%s: -" % _tr("build")
 		return
 
-	var text = ""
-	for item in summary:
-		if text != "":
-			text += "  |  "
-		text += item
+	var first_line = summary.slice(0, mini(4, summary.size()))
+	var second_line = summary.slice(mini(4, summary.size()), summary.size())
+	var text = _join_text(first_line, "  |  ")
+	if not second_line.is_empty():
+		text += "\n%s" % _join_text(second_line, "  |  ")
 	weapon_label.text = "%s: %s" % [_tr("build"), text]
 
 func set_stats(health, max_health, xp, xp_required, level, kills, elapsed_time):

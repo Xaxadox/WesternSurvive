@@ -129,6 +129,7 @@ func _ready():
 	hud.settings_changed.connect(_on_settings_changed)
 	hud.resume_requested.connect(_on_pause_resume_requested)
 	hud.return_to_menu_requested.connect(_return_to_start_menu)
+	hud.quit_requested.connect(_on_quit_requested)
 	if is_instance_valid(music) and not music.beat_hit.is_connected(_on_music_beat_hit):
 		music.beat_hit.connect(_on_music_beat_hit)
 	_load_progress()
@@ -256,6 +257,9 @@ func _set_manual_pause(value):
 func _on_pause_resume_requested():
 	if manual_pause_open:
 		_set_manual_pause(false)
+
+func _on_quit_requested():
+	get_tree().quit()
 
 func _return_to_start_menu():
 	get_tree().paused = false
