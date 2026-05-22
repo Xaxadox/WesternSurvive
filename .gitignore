@@ -9,6 +9,9 @@ engine/
 cache/
 builds/
 
+#Local images
+Sprites/
+
 # Godot export credentials may contain machine-specific paths or signing data
 export_presets.cfg
 project/export_presets.cfg
