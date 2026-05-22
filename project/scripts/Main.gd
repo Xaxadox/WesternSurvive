@@ -740,15 +740,160 @@ func _enemy_visual_data():
 	var stage_id = selected_stage.get("id", "")
 	if stage_id == "mine" or stage_id == "bonus":
 		return {
-			"sprite": "res://assets/enemies/ghost.png",
+			"sprite": "res://assets/enemies/frames/ghost/idle_down_0.png",
 			"sprite_height": 44.0,
-			"sprite_offset": Vector2(0, -5)
+			"sprite_offset": Vector2(0, -5),
+			"walk_sprites": [
+				"res://assets/enemies/frames/ghost/walk_side_0.png",
+				"res://assets/enemies/frames/ghost/walk_side_1.png",
+				"res://assets/enemies/frames/ghost/walk_side_2.png",
+				"res://assets/enemies/frames/ghost/walk_side_3.png",
+				"res://assets/enemies/frames/ghost/walk_side_4.png"
+			],
+			"animations": {
+				"idle_down": [
+					"res://assets/enemies/frames/ghost/idle_down_0.png"
+				],
+				"walk_down": [
+					"res://assets/enemies/frames/ghost/walk_down_0.png",
+					"res://assets/enemies/frames/ghost/walk_down_1.png"
+				],
+				"idle_up": [
+					"res://assets/enemies/frames/ghost/idle_up_0.png"
+				],
+				"walk_up": [
+					"res://assets/enemies/frames/ghost/walk_up_0.png",
+					"res://assets/enemies/frames/ghost/walk_up_1.png",
+					"res://assets/enemies/frames/ghost/walk_up_2.png"
+				],
+				"idle_side": [
+					"res://assets/enemies/frames/ghost/idle_side_0.png"
+				],
+				"walk_side": [
+					"res://assets/enemies/frames/ghost/walk_side_0.png",
+					"res://assets/enemies/frames/ghost/walk_side_1.png",
+					"res://assets/enemies/frames/ghost/walk_side_2.png",
+					"res://assets/enemies/frames/ghost/walk_side_3.png",
+					"res://assets/enemies/frames/ghost/walk_side_4.png"
+				]
+			},
+			"animation_fps": 8.5
 		}
 	return {
-		"sprite": "res://assets/enemies/bandit.png",
-		"sprite_height": 42.0,
-		"sprite_offset": Vector2(0, -5)
-	}
+			"sprite": "res://assets/enemies/frames/bandit/idle_down_0.png",
+			"sprite_height": 42.0,
+			"sprite_offset": Vector2(0, -5),
+			"walk_sprites": [
+				"res://assets/enemies/frames/bandit/walk_side_0.png",
+				"res://assets/enemies/frames/bandit/walk_side_1.png",
+				"res://assets/enemies/frames/bandit/walk_side_2.png",
+				"res://assets/enemies/frames/bandit/walk_side_3.png",
+				"res://assets/enemies/frames/bandit/walk_side_4.png",
+				"res://assets/enemies/frames/bandit/walk_side_5.png",
+				"res://assets/enemies/frames/bandit/walk_side_6.png",
+				"res://assets/enemies/frames/bandit/walk_side_7.png",
+				"res://assets/enemies/frames/bandit/walk_side_8.png",
+				"res://assets/enemies/frames/bandit/walk_side_9.png",
+				"res://assets/enemies/frames/bandit/walk_side_10.png",
+				"res://assets/enemies/frames/bandit/walk_side_11.png",
+				"res://assets/enemies/frames/bandit/walk_side_12.png",
+				"res://assets/enemies/frames/bandit/walk_side_13.png",
+				"res://assets/enemies/frames/bandit/walk_side_14.png",
+				"res://assets/enemies/frames/bandit/walk_side_15.png",
+				"res://assets/enemies/frames/bandit/walk_side_16.png",
+				"res://assets/enemies/frames/bandit/walk_side_17.png",
+				"res://assets/enemies/frames/bandit/walk_side_18.png",
+				"res://assets/enemies/frames/bandit/walk_side_19.png",
+				"res://assets/enemies/frames/bandit/walk_side_20.png",
+				"res://assets/enemies/frames/bandit/walk_side_21.png",
+				"res://assets/enemies/frames/bandit/walk_side_22.png",
+				"res://assets/enemies/frames/bandit/walk_side_23.png"
+			],
+			"animations": {
+				"idle_down": [
+					"res://assets/enemies/frames/bandit/idle_down_0.png"
+				],
+				"walk_down": [
+					"res://assets/enemies/frames/bandit/walk_down_0.png",
+					"res://assets/enemies/frames/bandit/walk_down_1.png",
+					"res://assets/enemies/frames/bandit/walk_down_2.png",
+					"res://assets/enemies/frames/bandit/walk_down_3.png",
+					"res://assets/enemies/frames/bandit/walk_down_4.png",
+					"res://assets/enemies/frames/bandit/walk_down_5.png",
+					"res://assets/enemies/frames/bandit/walk_down_6.png",
+					"res://assets/enemies/frames/bandit/walk_down_7.png",
+					"res://assets/enemies/frames/bandit/walk_down_8.png",
+					"res://assets/enemies/frames/bandit/walk_down_9.png",
+					"res://assets/enemies/frames/bandit/walk_down_10.png",
+					"res://assets/enemies/frames/bandit/walk_down_11.png",
+					"res://assets/enemies/frames/bandit/walk_down_12.png",
+					"res://assets/enemies/frames/bandit/walk_down_13.png",
+					"res://assets/enemies/frames/bandit/walk_down_14.png",
+					"res://assets/enemies/frames/bandit/walk_down_15.png",
+					"res://assets/enemies/frames/bandit/walk_down_16.png",
+					"res://assets/enemies/frames/bandit/walk_down_17.png",
+					"res://assets/enemies/frames/bandit/walk_down_18.png",
+					"res://assets/enemies/frames/bandit/walk_down_19.png",
+					"res://assets/enemies/frames/bandit/walk_down_20.png",
+					"res://assets/enemies/frames/bandit/walk_down_21.png",
+					"res://assets/enemies/frames/bandit/walk_down_22.png",
+					"res://assets/enemies/frames/bandit/walk_down_23.png"
+				],
+				"idle_up": [
+					"res://assets/enemies/frames/bandit/idle_up_0.png"
+				],
+				"walk_up": [
+					"res://assets/enemies/frames/bandit/walk_up_0.png",
+					"res://assets/enemies/frames/bandit/walk_up_1.png",
+					"res://assets/enemies/frames/bandit/walk_up_2.png",
+					"res://assets/enemies/frames/bandit/walk_up_3.png",
+					"res://assets/enemies/frames/bandit/walk_up_4.png",
+					"res://assets/enemies/frames/bandit/walk_up_5.png",
+					"res://assets/enemies/frames/bandit/walk_up_6.png",
+					"res://assets/enemies/frames/bandit/walk_up_7.png",
+					"res://assets/enemies/frames/bandit/walk_up_8.png",
+					"res://assets/enemies/frames/bandit/walk_up_9.png",
+					"res://assets/enemies/frames/bandit/walk_up_10.png",
+					"res://assets/enemies/frames/bandit/walk_up_11.png",
+					"res://assets/enemies/frames/bandit/walk_up_12.png",
+					"res://assets/enemies/frames/bandit/walk_up_13.png",
+					"res://assets/enemies/frames/bandit/walk_up_14.png",
+					"res://assets/enemies/frames/bandit/walk_up_15.png",
+					"res://assets/enemies/frames/bandit/walk_up_16.png",
+					"res://assets/enemies/frames/bandit/walk_up_17.png"
+				],
+				"idle_side": [
+					"res://assets/enemies/frames/bandit/idle_side_0.png"
+				],
+				"walk_side": [
+					"res://assets/enemies/frames/bandit/walk_side_0.png",
+					"res://assets/enemies/frames/bandit/walk_side_1.png",
+					"res://assets/enemies/frames/bandit/walk_side_2.png",
+					"res://assets/enemies/frames/bandit/walk_side_3.png",
+					"res://assets/enemies/frames/bandit/walk_side_4.png",
+					"res://assets/enemies/frames/bandit/walk_side_5.png",
+					"res://assets/enemies/frames/bandit/walk_side_6.png",
+					"res://assets/enemies/frames/bandit/walk_side_7.png",
+					"res://assets/enemies/frames/bandit/walk_side_8.png",
+					"res://assets/enemies/frames/bandit/walk_side_9.png",
+					"res://assets/enemies/frames/bandit/walk_side_10.png",
+					"res://assets/enemies/frames/bandit/walk_side_11.png",
+					"res://assets/enemies/frames/bandit/walk_side_12.png",
+					"res://assets/enemies/frames/bandit/walk_side_13.png",
+					"res://assets/enemies/frames/bandit/walk_side_14.png",
+					"res://assets/enemies/frames/bandit/walk_side_15.png",
+					"res://assets/enemies/frames/bandit/walk_side_16.png",
+					"res://assets/enemies/frames/bandit/walk_side_17.png",
+					"res://assets/enemies/frames/bandit/walk_side_18.png",
+					"res://assets/enemies/frames/bandit/walk_side_19.png",
+					"res://assets/enemies/frames/bandit/walk_side_20.png",
+					"res://assets/enemies/frames/bandit/walk_side_21.png",
+					"res://assets/enemies/frames/bandit/walk_side_22.png",
+					"res://assets/enemies/frames/bandit/walk_side_23.png"
+				]
+			},
+			"animation_fps": 8.5
+		}
 
 func _fire_weapon(weapon_id, shooter):
 	var projectile_count = projectiles.get_child_count()

@@ -21,8 +21,16 @@ var weapon_visual = "revolver"
 var silhouette = "gunslinger"
 var sprite_path = ""
 var sprite_texture: Texture2D = null
+var sprite_walk_textures = []
+var sprite_animations = {}
 var sprite_height = 0.0
 var sprite_offset = Vector2.ZERO
+var sprite_anim_time = 0.0
+var sprite_idle_time = 0.0
+var sprite_facing = Vector2.DOWN
+var sprite_direction_key = "down"
+var sprite_animation_fps = 8.0
+var sprite_flip_h = false
 
 var invulnerable_time = 0.0
 var player_marker_colors = [
@@ -54,8 +62,16 @@ func configure(data, index = 0):
 	silhouette = str(data.get("silhouette", silhouette))
 	sprite_path = str(data.get("sprite", ""))
 	sprite_texture = _load_sprite(sprite_path)
+	sprite_walk_textures = _load_sprite_list(data.get("walk_sprites", []))
+	sprite_animations = _load_animation_map(data.get("animations", {}))
+	sprite_animation_fps = float(data.get("animation_fps", 8.0))
 	sprite_height = float(data.get("sprite_height", 0.0))
 	sprite_offset = data.get("sprite_offset", Vector2.ZERO)
+	sprite_anim_time = 0.0
+	sprite_idle_time = 0.0
+	sprite_facing = Vector2.DOWN
+	sprite_direction_key = "down"
+	sprite_flip_h = false
 	alive = true
 	invulnerable_time = 0.0
 	velocity = Vector2.ZERO
@@ -76,8 +92,31 @@ func _physics_process(delta):
 	else:
 		velocity = Vector2.ZERO
 
+	_update_sprite_animation(delta, input_vector)
 	move_and_slide()
 	queue_redraw()
+
+func _update_sprite_animation(delta, input_vector):
+	sprite_idle_time += delta
+	if input_vector.length() <= 0.01:
+		sprite_anim_time = 0.0
+		return
+
+	sprite_facing = input_vector.normalized()
+	sprite_direction_key = _direction_key(sprite_facing)
+	if sprite_direction_key == "side" or absf(sprite_facing.x) > 0.2:
+		sprite_flip_h = sprite_facing.x < 0.0
+	var speed_factor = clampf(velocity.length() / maxf(move_speed, 1.0), 0.65, 1.35)
+	sprite_anim_time += delta * speed_factor
+
+func _direction_key(direction):
+	if direction.length() <= 0.01:
+		return sprite_direction_key
+	var horizontal = absf(direction.x)
+	var vertical = absf(direction.y)
+	if horizontal >= vertical * 0.75:
+		return "side"
+	return "up" if direction.y < 0.0 else "down"
 
 func _update_aim_direction(input_vector):
 	if player_index == 0:
@@ -200,8 +239,9 @@ func _draw():
 	draw_circle(Vector2(4, 8), 18, Color(0, 0, 0, 0.24))
 	draw_circle(Vector2.ZERO, 21, Color(outline_color.r, outline_color.g, outline_color.b, 0.26))
 	draw_arc(Vector2.ZERO, 22, -PI * 0.5, PI * 1.5, 40, marker, 3.0)
-	if sprite_texture != null and sprite_height > 0.0:
-		_draw_sprite(sprite_texture, sprite_height, sprite_offset, Color(1.25, 1.12, 0.72, 1.0) if blink else Color.WHITE)
+	var active_sprite = _current_sprite_texture()
+	if active_sprite != null and sprite_height > 0.0:
+		_draw_sprite(active_sprite, sprite_height, sprite_offset, Color(1.25, 1.12, 0.72, 1.0) if blink else Color.WHITE)
 	else:
 		_draw_body(coat, hat, scarf)
 		_draw_weapon(aim_direction.normalized())
@@ -225,16 +265,79 @@ func _load_sprite(path):
 		return null
 	return ImageTexture.create_from_image(image)
 
+func _load_sprite_list(paths):
+	var result = []
+	if typeof(paths) != TYPE_ARRAY:
+		return result
+	for path_value in paths:
+		var texture = _load_sprite(str(path_value))
+		if texture != null:
+			result.append(texture)
+	return result
+
+func _load_animation_map(animations):
+	var result = {}
+	if typeof(animations) != TYPE_DICTIONARY:
+		return result
+	for key in animations.keys():
+		var frames = _load_sprite_list(animations[key])
+		if not frames.is_empty():
+			result[str(key)] = frames
+	return result
+
+func _current_sprite_texture():
+	var moving = velocity.length() > 1.0
+	if not sprite_animations.is_empty():
+		var prefix = "walk" if moving else "idle"
+		var active = _animation_frame("%s_%s" % [prefix, sprite_direction_key], moving)
+		if active != null:
+			return active
+		active = _animation_frame("%s_down" % prefix, moving)
+		if active != null:
+			return active
+		active = _animation_frame("idle_down", false)
+		if active != null:
+			return active
+	if moving and not sprite_walk_textures.is_empty():
+		var index = int(sprite_anim_time * sprite_animation_fps) % sprite_walk_textures.size()
+		return sprite_walk_textures[index]
+	return sprite_texture
+
+func _animation_frame(key, moving):
+	var frames = sprite_animations.get(key, [])
+	if typeof(frames) != TYPE_ARRAY or frames.is_empty():
+		return null
+	var time = sprite_anim_time if moving else sprite_idle_time
+	var fps = sprite_animation_fps if moving else 1.5
+	var index = int(time * fps) % frames.size()
+	return frames[index]
+
 func _draw_sprite(texture, height, offset, modulate):
 	var aspect = float(texture.get_width()) / float(maxi(texture.get_height(), 1))
 	var size = Vector2(height * aspect, height)
-	var rect = Rect2(offset - size * 0.5, size)
-	draw_texture_rect(texture, rect, false, modulate)
+	var moving = velocity.length() > 1.0
+	var phase = sprite_anim_time * TAU * 3.0
+	var idle_phase = sprite_idle_time * TAU * 0.55
+	var bob = sin(phase) * 0.45 if moving else sin(idle_phase) * 0.18
+	var rotation = 0.0
+	var draw_scale = Vector2.ONE
+	if sprite_animations.is_empty():
+		var lean_source = sprite_facing.x if absf(sprite_facing.x) > 0.08 else aim_direction.x
+		var lean_sign = -1.0 if lean_source < 0.0 else 1.0
+		rotation = sin(phase) * 0.025 * lean_sign if moving else sin(idle_phase) * 0.006
+		var pulse = absf(sin(phase)) if moving else 0.0
+		draw_scale = Vector2(1.0 + pulse * 0.014, 1.0 - pulse * 0.010)
+	if sprite_flip_h:
+		draw_scale.x *= -1.0
+	draw_set_transform(offset + Vector2(0, bob), rotation, draw_scale)
+	draw_texture_rect(texture, Rect2(-size * 0.5, size), false, modulate)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _marker_position():
 	if sprite_texture == null or sprite_height <= 0.0:
 		return Vector2(-15, -29)
-	return sprite_offset + Vector2(-sprite_height * 0.24, -sprite_height * 0.48)
+	var side = 1.0 if sprite_flip_h else -1.0
+	return sprite_offset + Vector2(side * sprite_height * 0.24, -sprite_height * 0.48)
 
 func _draw_body(coat, hat, scarf):
 	match silhouette:

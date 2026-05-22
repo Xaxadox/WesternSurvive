@@ -24,10 +24,43 @@ static var CHARACTER_DATA = [
 		"badge": Color("#f2d36b"),
 		"visual_weapon": "revolver",
 		"silhouette": "gunslinger",
-		"sprite": "res://assets/characters/gunslinger.png",
+		"sprite": "res://assets/characters/frames/gunslinger/idle_down_0.png",
 		"menu_icon": "res://assets/menu/characters/gunslinger.png",
 		"sprite_height": 72.0,
-		"sprite_offset": Vector2(0, -10)
+		"sprite_offset": Vector2(0, -10),
+		"walk_sprites": [
+			"res://assets/characters/frames/gunslinger/walk_side_0.png",
+			"res://assets/characters/frames/gunslinger/walk_side_1.png",
+			"res://assets/characters/frames/gunslinger/walk_side_2.png",
+			"res://assets/characters/frames/gunslinger/walk_side_3.png"
+		],
+		"animations": {
+			"idle_down": [
+				"res://assets/characters/frames/gunslinger/idle_down_0.png"
+			],
+			"walk_down": [
+				"res://assets/characters/frames/gunslinger/walk_down_0.png",
+				"res://assets/characters/frames/gunslinger/walk_down_1.png",
+				"res://assets/characters/frames/gunslinger/walk_down_2.png"
+			],
+			"idle_up": [
+				"res://assets/characters/frames/gunslinger/idle_up_0.png"
+			],
+			"walk_up": [
+				"res://assets/characters/frames/gunslinger/walk_up_0.png",
+				"res://assets/characters/frames/gunslinger/walk_up_1.png"
+			],
+			"idle_side": [
+				"res://assets/characters/frames/gunslinger/idle_side_0.png"
+			],
+			"walk_side": [
+				"res://assets/characters/frames/gunslinger/walk_side_0.png",
+				"res://assets/characters/frames/gunslinger/walk_side_1.png",
+				"res://assets/characters/frames/gunslinger/walk_side_2.png",
+				"res://assets/characters/frames/gunslinger/walk_side_3.png"
+			]
+		},
+		"animation_fps": 8.0
 	},
 	{
 		"id": "sheriff",
@@ -52,10 +85,93 @@ static var CHARACTER_DATA = [
 		"badge": Color("#ffd56a"),
 		"visual_weapon": "shotgun",
 		"silhouette": "sheriff",
-		"sprite": "res://assets/characters/sheriff.png",
+		"sprite": "res://assets/characters/frames/sheriff/idle_down_0.png",
 		"menu_icon": "res://assets/menu/characters/sheriff.png",
 		"sprite_height": 72.0,
-		"sprite_offset": Vector2(0, -10)
+		"sprite_offset": Vector2(0, -10),
+		"walk_sprites": [
+			"res://assets/characters/frames/sheriff/walk_side_0.png",
+			"res://assets/characters/frames/sheriff/walk_side_1.png",
+			"res://assets/characters/frames/sheriff/walk_side_2.png",
+			"res://assets/characters/frames/sheriff/walk_side_3.png",
+			"res://assets/characters/frames/sheriff/walk_side_4.png",
+			"res://assets/characters/frames/sheriff/walk_side_5.png",
+			"res://assets/characters/frames/sheriff/walk_side_6.png",
+			"res://assets/characters/frames/sheriff/walk_side_7.png",
+			"res://assets/characters/frames/sheriff/walk_side_8.png",
+			"res://assets/characters/frames/sheriff/walk_side_9.png",
+			"res://assets/characters/frames/sheriff/walk_side_10.png",
+			"res://assets/characters/frames/sheriff/walk_side_11.png",
+			"res://assets/characters/frames/sheriff/walk_side_12.png",
+			"res://assets/characters/frames/sheriff/walk_side_13.png",
+			"res://assets/characters/frames/sheriff/walk_side_14.png",
+			"res://assets/characters/frames/sheriff/walk_side_15.png",
+			"res://assets/characters/frames/sheriff/walk_side_16.png",
+			"res://assets/characters/frames/sheriff/walk_side_17.png",
+			"res://assets/characters/frames/sheriff/walk_side_18.png",
+			"res://assets/characters/frames/sheriff/walk_side_19.png",
+			"res://assets/characters/frames/sheriff/walk_side_20.png"
+		],
+		"animations": {
+			"idle_down": [
+				"res://assets/characters/frames/sheriff/idle_down_0.png"
+			],
+			"walk_down": [
+				"res://assets/characters/frames/sheriff/walk_down_0.png",
+				"res://assets/characters/frames/sheriff/walk_down_1.png",
+				"res://assets/characters/frames/sheriff/walk_down_2.png",
+				"res://assets/characters/frames/sheriff/walk_down_3.png",
+				"res://assets/characters/frames/sheriff/walk_down_4.png",
+				"res://assets/characters/frames/sheriff/walk_down_5.png",
+				"res://assets/characters/frames/sheriff/walk_down_6.png",
+				"res://assets/characters/frames/sheriff/walk_down_7.png",
+				"res://assets/characters/frames/sheriff/walk_down_8.png",
+				"res://assets/characters/frames/sheriff/walk_down_9.png",
+				"res://assets/characters/frames/sheriff/walk_down_10.png",
+				"res://assets/characters/frames/sheriff/walk_down_11.png"
+			],
+			"idle_up": [
+				"res://assets/characters/frames/sheriff/idle_up_0.png"
+			],
+			"walk_up": [
+				"res://assets/characters/frames/sheriff/walk_up_0.png",
+				"res://assets/characters/frames/sheriff/walk_up_1.png",
+				"res://assets/characters/frames/sheriff/walk_up_2.png",
+				"res://assets/characters/frames/sheriff/walk_up_3.png",
+				"res://assets/characters/frames/sheriff/walk_up_4.png",
+				"res://assets/characters/frames/sheriff/walk_up_5.png",
+				"res://assets/characters/frames/sheriff/walk_up_6.png",
+				"res://assets/characters/frames/sheriff/walk_up_7.png",
+				"res://assets/characters/frames/sheriff/walk_up_8.png"
+			],
+			"idle_side": [
+				"res://assets/characters/frames/sheriff/idle_side_0.png"
+			],
+			"walk_side": [
+				"res://assets/characters/frames/sheriff/walk_side_0.png",
+				"res://assets/characters/frames/sheriff/walk_side_1.png",
+				"res://assets/characters/frames/sheriff/walk_side_2.png",
+				"res://assets/characters/frames/sheriff/walk_side_3.png",
+				"res://assets/characters/frames/sheriff/walk_side_4.png",
+				"res://assets/characters/frames/sheriff/walk_side_5.png",
+				"res://assets/characters/frames/sheriff/walk_side_6.png",
+				"res://assets/characters/frames/sheriff/walk_side_7.png",
+				"res://assets/characters/frames/sheriff/walk_side_8.png",
+				"res://assets/characters/frames/sheriff/walk_side_9.png",
+				"res://assets/characters/frames/sheriff/walk_side_10.png",
+				"res://assets/characters/frames/sheriff/walk_side_11.png",
+				"res://assets/characters/frames/sheriff/walk_side_12.png",
+				"res://assets/characters/frames/sheriff/walk_side_13.png",
+				"res://assets/characters/frames/sheriff/walk_side_14.png",
+				"res://assets/characters/frames/sheriff/walk_side_15.png",
+				"res://assets/characters/frames/sheriff/walk_side_16.png",
+				"res://assets/characters/frames/sheriff/walk_side_17.png",
+				"res://assets/characters/frames/sheriff/walk_side_18.png",
+				"res://assets/characters/frames/sheriff/walk_side_19.png",
+				"res://assets/characters/frames/sheriff/walk_side_20.png"
+			]
+		},
+		"animation_fps": 8.0
 	},
 	{
 		"id": "bounty_hunter",
@@ -80,10 +196,135 @@ static var CHARACTER_DATA = [
 		"badge": Color("#f59be7"),
 		"visual_weapon": "rifle",
 		"silhouette": "hunter",
-		"sprite": "res://assets/characters/bounty_hunter.png",
+		"sprite": "res://assets/characters/frames/bounty_hunter/idle_down_0.png",
 		"menu_icon": "res://assets/menu/characters/bounty_hunter.png",
-		"sprite_height": 56.0,
-		"sprite_offset": Vector2(0, -8)
+		"sprite_height": 68.0,
+		"sprite_offset": Vector2(0, -8),
+		"walk_sprites": [
+			"res://assets/characters/frames/bounty_hunter/walk_side_0.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_1.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_2.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_3.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_4.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_5.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_6.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_7.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_8.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_9.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_10.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_11.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_12.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_13.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_14.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_15.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_16.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_17.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_18.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_19.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_20.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_21.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_22.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_23.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_24.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_25.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_26.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_27.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_28.png",
+			"res://assets/characters/frames/bounty_hunter/walk_side_29.png"
+		],
+		"animations": {
+			"idle_down": [
+				"res://assets/characters/frames/bounty_hunter/idle_down_0.png"
+			],
+			"walk_down": [
+				"res://assets/characters/frames/bounty_hunter/walk_down_0.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_1.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_2.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_3.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_4.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_5.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_6.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_7.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_8.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_9.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_10.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_11.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_12.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_13.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_14.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_15.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_16.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_17.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_18.png",
+				"res://assets/characters/frames/bounty_hunter/walk_down_19.png"
+			],
+			"idle_up": [
+				"res://assets/characters/frames/bounty_hunter/idle_up_0.png"
+			],
+			"walk_up": [
+				"res://assets/characters/frames/bounty_hunter/walk_up_0.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_1.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_2.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_3.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_4.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_5.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_6.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_7.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_8.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_9.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_10.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_11.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_12.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_13.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_14.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_15.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_16.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_17.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_18.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_19.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_20.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_21.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_22.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_23.png",
+				"res://assets/characters/frames/bounty_hunter/walk_up_24.png"
+			],
+			"idle_side": [
+				"res://assets/characters/frames/bounty_hunter/idle_side_0.png"
+			],
+			"walk_side": [
+				"res://assets/characters/frames/bounty_hunter/walk_side_0.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_1.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_2.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_3.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_4.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_5.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_6.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_7.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_8.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_9.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_10.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_11.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_12.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_13.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_14.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_15.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_16.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_17.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_18.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_19.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_20.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_21.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_22.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_23.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_24.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_25.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_26.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_27.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_28.png",
+				"res://assets/characters/frames/bounty_hunter/walk_side_29.png"
+			]
+		},
+		"animation_fps": 8.0
 	},
 	{
 		"id": "shaman",
@@ -108,10 +349,81 @@ static var CHARACTER_DATA = [
 		"badge": Color("#9be8d4"),
 		"visual_weapon": "lantern",
 		"silhouette": "healer",
-		"sprite": "res://assets/characters/shaman.png",
+		"sprite": "res://assets/characters/frames/shaman/idle_down_0.png",
 		"menu_icon": "res://assets/menu/characters/shaman.png",
 		"sprite_height": 68.0,
-		"sprite_offset": Vector2(0, -10)
+		"sprite_offset": Vector2(0, -10),
+		"walk_sprites": [
+			"res://assets/characters/frames/shaman/walk_side_0.png",
+			"res://assets/characters/frames/shaman/walk_side_1.png",
+			"res://assets/characters/frames/shaman/walk_side_2.png",
+			"res://assets/characters/frames/shaman/walk_side_3.png",
+			"res://assets/characters/frames/shaman/walk_side_4.png",
+			"res://assets/characters/frames/shaman/walk_side_5.png",
+			"res://assets/characters/frames/shaman/walk_side_6.png",
+			"res://assets/characters/frames/shaman/walk_side_7.png",
+			"res://assets/characters/frames/shaman/walk_side_8.png",
+			"res://assets/characters/frames/shaman/walk_side_9.png",
+			"res://assets/characters/frames/shaman/walk_side_10.png",
+			"res://assets/characters/frames/shaman/walk_side_11.png",
+			"res://assets/characters/frames/shaman/walk_side_12.png",
+			"res://assets/characters/frames/shaman/walk_side_13.png",
+			"res://assets/characters/frames/shaman/walk_side_14.png",
+			"res://assets/characters/frames/shaman/walk_side_15.png",
+			"res://assets/characters/frames/shaman/walk_side_16.png",
+			"res://assets/characters/frames/shaman/walk_side_17.png",
+			"res://assets/characters/frames/shaman/walk_side_18.png",
+			"res://assets/characters/frames/shaman/walk_side_19.png",
+			"res://assets/characters/frames/shaman/walk_side_20.png"
+		],
+		"animations": {
+			"idle_down": [
+				"res://assets/characters/frames/shaman/idle_down_0.png"
+			],
+			"walk_down": [
+				"res://assets/characters/frames/shaman/walk_down_0.png",
+				"res://assets/characters/frames/shaman/walk_down_1.png",
+				"res://assets/characters/frames/shaman/walk_down_2.png"
+			],
+			"idle_up": [
+				"res://assets/characters/frames/shaman/idle_up_0.png"
+			],
+			"walk_up": [
+				"res://assets/characters/frames/shaman/walk_up_0.png",
+				"res://assets/characters/frames/shaman/walk_up_1.png",
+				"res://assets/characters/frames/shaman/walk_up_2.png",
+				"res://assets/characters/frames/shaman/walk_up_3.png",
+				"res://assets/characters/frames/shaman/walk_up_4.png",
+				"res://assets/characters/frames/shaman/walk_up_5.png"
+			],
+			"idle_side": [
+				"res://assets/characters/frames/shaman/idle_side_0.png"
+			],
+			"walk_side": [
+				"res://assets/characters/frames/shaman/walk_side_0.png",
+				"res://assets/characters/frames/shaman/walk_side_1.png",
+				"res://assets/characters/frames/shaman/walk_side_2.png",
+				"res://assets/characters/frames/shaman/walk_side_3.png",
+				"res://assets/characters/frames/shaman/walk_side_4.png",
+				"res://assets/characters/frames/shaman/walk_side_5.png",
+				"res://assets/characters/frames/shaman/walk_side_6.png",
+				"res://assets/characters/frames/shaman/walk_side_7.png",
+				"res://assets/characters/frames/shaman/walk_side_8.png",
+				"res://assets/characters/frames/shaman/walk_side_9.png",
+				"res://assets/characters/frames/shaman/walk_side_10.png",
+				"res://assets/characters/frames/shaman/walk_side_11.png",
+				"res://assets/characters/frames/shaman/walk_side_12.png",
+				"res://assets/characters/frames/shaman/walk_side_13.png",
+				"res://assets/characters/frames/shaman/walk_side_14.png",
+				"res://assets/characters/frames/shaman/walk_side_15.png",
+				"res://assets/characters/frames/shaman/walk_side_16.png",
+				"res://assets/characters/frames/shaman/walk_side_17.png",
+				"res://assets/characters/frames/shaman/walk_side_18.png",
+				"res://assets/characters/frames/shaman/walk_side_19.png",
+				"res://assets/characters/frames/shaman/walk_side_20.png"
+			]
+		},
+		"animation_fps": 8.0
 	}
 ]
 
