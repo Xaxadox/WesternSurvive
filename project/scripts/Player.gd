@@ -104,7 +104,7 @@ func _update_sprite_animation(delta, input_vector):
 
 	sprite_facing = input_vector.normalized()
 	sprite_direction_key = _direction_key(sprite_facing)
-	if sprite_direction_key == "side" or absf(sprite_facing.x) > 0.2:
+	if sprite_direction_key == "side" and absf(sprite_facing.x) > 0.08:
 		sprite_flip_h = sprite_facing.x < 0.0
 	var speed_factor = clampf(velocity.length() / maxf(move_speed, 1.0), 0.65, 1.35)
 	sprite_anim_time += delta * speed_factor
@@ -114,9 +114,16 @@ func _direction_key(direction):
 		return sprite_direction_key
 	var horizontal = absf(direction.x)
 	var vertical = absf(direction.y)
-	if horizontal >= vertical * 0.75:
+	var vertical_key = "up" if direction.y < 0.0 else "down"
+	if horizontal >= vertical * 1.20:
 		return "side"
-	return "up" if direction.y < 0.0 else "down"
+	if vertical >= horizontal * 1.20:
+		return vertical_key
+	if sprite_direction_key == "side" and horizontal > 0.05:
+		return "side"
+	if (sprite_direction_key == "up" or sprite_direction_key == "down") and vertical > 0.05:
+		return sprite_direction_key if sprite_direction_key == vertical_key else vertical_key
+	return vertical_key if vertical >= horizontal else "side"
 
 func _update_aim_direction(input_vector):
 	if player_index == 0:
@@ -327,7 +334,7 @@ func _draw_sprite(texture, height, offset, modulate):
 		rotation = sin(phase) * 0.025 * lean_sign if moving else sin(idle_phase) * 0.006
 		var pulse = absf(sin(phase)) if moving else 0.0
 		draw_scale = Vector2(1.0 + pulse * 0.014, 1.0 - pulse * 0.010)
-	if sprite_flip_h:
+	if sprite_direction_key == "side" and sprite_flip_h:
 		draw_scale.x *= -1.0
 	draw_set_transform(offset + Vector2(0, bob), rotation, draw_scale)
 	draw_texture_rect(texture, Rect2(-size * 0.5, size), false, modulate)
@@ -336,7 +343,7 @@ func _draw_sprite(texture, height, offset, modulate):
 func _marker_position():
 	if sprite_texture == null or sprite_height <= 0.0:
 		return Vector2(-15, -29)
-	var side = 1.0 if sprite_flip_h else -1.0
+	var side = 1.0 if sprite_direction_key == "side" and sprite_flip_h else -1.0
 	return sprite_offset + Vector2(side * sprite_height * 0.24, -sprite_height * 0.48)
 
 func _draw_body(coat, hat, scarf):
