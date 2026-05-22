@@ -474,29 +474,66 @@ func _stage_obstacle_data(stage_id, index, count):
 	if position.length() < 320.0:
 		position = position.normalized() * 320.0
 
-	var kind = "building"
-	var size = Vector2(120, 92)
+	var kind = "boulder"
+	var size = Vector2(108, 70)
 	match stage_id:
 		"canyon":
-			kind = "boulder" if index % 3 != 0 else "cactus"
-			size = Vector2(86, 74) if kind == "boulder" else Vector2(70, 92)
+			kind = "spire" if index % 3 == 0 else "boulder"
+			size = Vector2(118, 126) if kind == "spire" else Vector2(86, 74)
 		"broken_fort":
-			kind = ["building", "fence", "wagon"][index % 3]
-			size = Vector2(128, 86) if kind == "building" else Vector2(118, 62)
+			kind = ["wall", "crate", "planks"][index % 3]
+			size = Vector2(136, 64) if kind == "wall" else Vector2(82, 74)
 		"bonus":
-			kind = ["building", "wagon", "boulder"][index % 3]
-			size = Vector2(118, 82)
+			kind = ["rail", "rock", "lantern"][index % 3]
+			if kind == "rail":
+				size = Vector2(60, 132)
+			elif kind == "rock":
+				size = Vector2(92, 104)
+			else:
+				size = Vector2(72, 118)
 		_:
-			kind = ["building", "wagon", "fence", "boulder"][index % 4]
-			size = Vector2(132, 92) if kind == "building" else Vector2(108, 70)
+			kind = ["cactus", "boulder", "fence", "boulder"][index % 4]
+			if kind == "cactus":
+				size = Vector2(86, 86)
+			elif kind == "fence":
+				size = Vector2(118, 54)
+			else:
+				size = Vector2(92, 78)
 
 	return {
 		"kind": kind,
 		"position": position,
 		"size": size,
 		"color": selected_stage.get("accent", Color("#7a4a27")),
-		"detail": Color("#3b2417")
+		"detail": Color("#3b2417"),
+		"texture": _stage_prop_texture(kind),
+		"texture_height": _stage_obstacle_visual_height(stage_id, kind)
 	}
+
+func _stage_prop_texture(kind):
+	var props = selected_stage.get("props", {})
+	if typeof(props) != TYPE_DICTIONARY:
+		return ""
+	return str(props.get(kind, ""))
+
+func _stage_obstacle_visual_height(stage_id, kind):
+	match stage_id:
+		"canyon":
+			return 128.0 if kind == "spire" else 82.0
+		"broken_fort":
+			return 72.0 if kind == "wall" else 74.0
+		"bonus":
+			if kind == "rail":
+				return 132.0
+			if kind == "lantern":
+				return 118.0
+			return 104.0
+		_:
+			if kind == "fence":
+				return 54.0
+			if kind == "cactus":
+				return 88.0
+			return 78.0
 
 func _stable_stage_hash(stage_id, index):
 	return int(abs(sin(float(stage_id.hash() + index * 97) * 0.01357)) * 100000.0)

@@ -438,6 +438,12 @@ static var STAGE_DATA = [
 		"grid": Color(0.55, 0.31, 0.15, 0.14),
 		"accent": Color("#7a4a27"),
 		"icon": "res://assets/menu/stages/ghost_town.png",
+		"props": {
+			"cactus": "res://assets/stages/props/ghost_town/cactus.png",
+			"boulder": "res://assets/stages/props/ghost_town/boulder.png",
+			"scrub": "res://assets/stages/props/ghost_town/scrub.png",
+			"fence": "res://assets/stages/props/ghost_town/fence.png"
+		},
 		"enemy_health": 1.0,
 		"enemy_speed": 1.0,
 		"spawn_mult": 1.0,
@@ -455,6 +461,11 @@ static var STAGE_DATA = [
 		"grid": Color(0.33, 0.12, 0.08, 0.16),
 		"accent": Color("#6a2720"),
 		"icon": "res://assets/menu/stages/canyon.png",
+		"props": {
+			"spire": "res://assets/stages/props/canyon/spire.png",
+			"boulder": "res://assets/stages/props/canyon/boulder.png",
+			"scrub": "res://assets/stages/props/canyon/scrub.png"
+		},
 		"enemy_health": 1.10,
 		"enemy_speed": 1.10,
 		"spawn_mult": 0.95,
@@ -472,6 +483,12 @@ static var STAGE_DATA = [
 		"grid": Color(0.30, 0.18, 0.10, 0.18),
 		"accent": Color("#4f3420"),
 		"icon": "res://assets/menu/stages/broken_fort.png",
+		"props": {
+			"wall": "res://assets/stages/props/broken_fort/wall.png",
+			"crate": "res://assets/stages/props/broken_fort/crate.png",
+			"planks": "res://assets/stages/props/broken_fort/planks.png",
+			"scrub": "res://assets/stages/props/broken_fort/scrub.png"
+		},
 		"enemy_health": 1.16,
 		"enemy_speed": 1.02,
 		"spawn_mult": 1.06,
@@ -489,6 +506,11 @@ static var STAGE_DATA = [
 		"grid": Color(0.12, 0.09, 0.07, 0.22),
 		"accent": Color("#c59b4f"),
 		"icon": "res://assets/menu/stages/mine.png",
+		"props": {
+			"rail": "res://assets/stages/props/mine/rail.png",
+			"rock": "res://assets/stages/props/mine/rock.png",
+			"lantern": "res://assets/stages/props/mine/lantern.png"
+		},
 		"enemy_health": 1.25,
 		"enemy_speed": 0.95,
 		"spawn_mult": 1.12,
@@ -507,6 +529,11 @@ static var STAGE_DATA = [
 		"grid": Color(0.72, 0.61, 0.23, 0.16),
 		"accent": Color("#f0c85a"),
 		"icon": "res://assets/menu/stages/bonus.png",
+		"props": {
+			"rail": "res://assets/stages/props/bonus/rail.png",
+			"rock": "res://assets/stages/props/bonus/rock.png",
+			"lantern": "res://assets/stages/props/bonus/lantern.png"
+		},
 		"enemy_health": 1.42,
 		"enemy_speed": 1.18,
 		"spawn_mult": 1.22,

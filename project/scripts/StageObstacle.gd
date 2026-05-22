@@ -4,6 +4,10 @@ var kind = "building"
 var obstacle_size = Vector2(120, 92)
 var body_color = Color("#7a4a27")
 var detail_color = Color("#3f281a")
+var texture_path = ""
+var texture: Texture2D = null
+var texture_height = 0.0
+var texture_offset = Vector2.ZERO
 
 func _ready():
 	collision_layer = 4
@@ -14,12 +18,20 @@ func setup(data):
 	obstacle_size = data.get("size", obstacle_size)
 	body_color = data.get("color", body_color)
 	detail_color = data.get("detail", detail_color)
+	texture_path = str(data.get("texture", ""))
+	texture = _load_texture(texture_path)
+	texture_height = float(data.get("texture_height", obstacle_size.y))
+	texture_offset = data.get("texture_offset", Vector2.ZERO)
 	var shape = RectangleShape2D.new()
 	shape.size = obstacle_size
 	$CollisionShape2D.shape = shape
 	queue_redraw()
 
 func _draw():
+	if texture != null and texture_height > 0.0:
+		_draw_texture_prop()
+		return
+
 	match kind:
 		"building":
 			_draw_building()
@@ -31,6 +43,23 @@ func _draw():
 			_draw_cactus()
 		_:
 			_draw_boulder()
+
+func _draw_texture_prop():
+	var aspect = float(texture.get_width()) / float(maxi(texture.get_height(), 1))
+	var size = Vector2(texture_height * aspect, texture_height)
+	draw_texture_rect(texture, Rect2(texture_offset - size * 0.5, size), false)
+
+func _load_texture(path):
+	if path == "":
+		return null
+	if ResourceLoader.exists(path):
+		var loaded = load(path)
+		if loaded is Texture2D:
+			return loaded
+	var image = Image.new()
+	if image.load(path) == OK:
+		return ImageTexture.create_from_image(image)
+	return null
 
 func _draw_building():
 	var rect = Rect2(-obstacle_size * 0.5, obstacle_size)

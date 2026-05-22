@@ -14,12 +14,14 @@ var stage_data = {
 	"grid": Color(0.55, 0.31, 0.15, 0.12),
 	"accent": Color("#7a4a27")
 }
+var stage_prop_textures = {}
 
 func _ready():
 	player = get_tree().get_first_node_in_group("player")
 
 func set_stage(data):
 	stage_data = data
+	stage_prop_textures = _load_stage_prop_textures(stage_data.get("props", {}))
 	last_draw_focus = Vector2(9999999, 9999999)
 	queue_redraw()
 
@@ -96,11 +98,14 @@ func _draw_mine_layout(area):
 			draw_circle(center + Vector2(-room_radius * 0.18, -room_radius * 0.12), room_radius * 0.66, chamber_light)
 			_draw_mine_wall_marks(center, room_radius, hash)
 			if hash % 4 == 0:
-				_draw_lantern(center + Vector2(18, -16))
+				if not _draw_stage_texture_prop("lantern", center + Vector2(18, -16), 58.0):
+					_draw_lantern(center + Vector2(18, -16))
 			elif hash % 5 == 0:
-				_draw_mine_rail(center + Vector2(-8, 20))
+				if not _draw_stage_texture_prop("rail", center + Vector2(-8, 20), 76.0):
+					_draw_mine_rail(center + Vector2(-8, 20))
 			elif hash % 7 == 0:
-				_draw_rock(center + Vector2(24, 18))
+				if not _draw_stage_texture_prop("rock", center + Vector2(24, 18), 54.0):
+					_draw_rock(center + Vector2(24, 18))
 
 func _draw_mine_corridor(a, b, shadow, color):
 	draw_line(a, b, shadow, MINE_CORRIDOR_HALF_WIDTH * 2.6)
@@ -226,49 +231,98 @@ func _closest_point_on_segment(point, a, b):
 func _cell_hash(x, y):
 	return int(abs(sin(float(x) * 12.9898 + float(y) * 78.233)) * 100000.0)
 
+func _load_stage_prop_textures(props):
+	var result = {}
+	if typeof(props) != TYPE_DICTIONARY:
+		return result
+	for key in props.keys():
+		var texture = _load_stage_prop_texture(str(props[key]))
+		if texture != null:
+			result[str(key)] = texture
+	return result
+
+func _load_stage_prop_texture(path):
+	if path == "":
+		return null
+	if ResourceLoader.exists(path):
+		var loaded = load(path)
+		if loaded is Texture2D:
+			return loaded
+	var image = Image.new()
+	if image.load(path) == OK:
+		return ImageTexture.create_from_image(image)
+	return null
+
+func _draw_stage_texture_prop(key, pos, height = 42.0, offset = Vector2.ZERO):
+	var texture = stage_prop_textures.get(key, null)
+	if texture == null:
+		return false
+	var aspect = float(texture.get_width()) / float(maxi(texture.get_height(), 1))
+	var size = Vector2(height * aspect, height)
+	draw_texture_rect(texture, Rect2(pos + offset - size * 0.5, size), false)
+	return true
+
 func _draw_stage_prop(pos, hash):
 	match stage_data.get("id", "ghost_town"):
 		"canyon":
 			if hash == 1 or hash == 9:
-				_draw_canyon_spire(pos)
+				if not _draw_stage_texture_prop("spire", pos, 66.0):
+					_draw_canyon_spire(pos)
 			elif hash == 4:
-				_draw_rock(pos)
+				if not _draw_stage_texture_prop("boulder", pos, 36.0):
+					_draw_rock(pos)
 			elif hash == 8:
-				_draw_scrub(pos)
+				if not _draw_stage_texture_prop("scrub", pos, 30.0):
+					_draw_scrub(pos)
 		"broken_fort":
 			if hash == 1:
-				_draw_fort_wall(pos)
+				if not _draw_stage_texture_prop("wall", pos, 38.0):
+					_draw_fort_wall(pos)
 			elif hash == 3:
-				_draw_small_building(pos)
+				if not _draw_stage_texture_prop("planks", pos, 38.0):
+					_draw_small_building(pos)
 			elif hash == 4 or hash == 11:
-				_draw_crate(pos)
+				if not _draw_stage_texture_prop("crate", pos, 34.0):
+					_draw_crate(pos)
 			elif hash == 8:
-				_draw_scrub(pos)
+				if not _draw_stage_texture_prop("scrub", pos, 30.0):
+					_draw_scrub(pos)
 		"mine":
 			if hash == 1:
-				_draw_mine_rail(pos)
+				if not _draw_stage_texture_prop("rail", pos, 58.0):
+					_draw_mine_rail(pos)
 			elif hash == 4:
-				_draw_rock(pos)
+				if not _draw_stage_texture_prop("rock", pos, 44.0):
+					_draw_rock(pos)
 			elif hash == 8 or hash == 13:
-				_draw_lantern(pos)
+				if not _draw_stage_texture_prop("lantern", pos, 50.0):
+					_draw_lantern(pos)
 		"bonus":
 			if hash == 1 or hash == 14:
-				_draw_gold_rail(pos)
+				if not _draw_stage_texture_prop("rail", pos, 62.0):
+					_draw_gold_rail(pos)
 			elif hash == 4:
-				_draw_rock(pos)
+				if not _draw_stage_texture_prop("rock", pos, 48.0):
+					_draw_rock(pos)
 			elif hash == 8:
-				_draw_lantern(pos)
+				if not _draw_stage_texture_prop("lantern", pos, 52.0):
+					_draw_lantern(pos)
 		_:
 			if hash == 1:
-				_draw_cactus(pos)
+				if not _draw_stage_texture_prop("cactus", pos, 42.0):
+					_draw_cactus(pos)
 			elif hash == 3:
-				_draw_small_building(pos)
+				if not _draw_stage_texture_prop("fence", pos, 36.0):
+					_draw_small_building(pos)
 			elif hash == 4:
-				_draw_rock(pos)
+				if not _draw_stage_texture_prop("boulder", pos, 34.0):
+					_draw_rock(pos)
 			elif hash == 8:
-				_draw_scrub(pos)
+				if not _draw_stage_texture_prop("scrub", pos, 30.0):
+					_draw_scrub(pos)
 			elif hash == 12:
-				_draw_fence(pos)
+				if not _draw_stage_texture_prop("fence", pos, 32.0):
+					_draw_fence(pos)
 
 func _draw_cactus(pos):
 	var green = Color("#356f42")
