@@ -4,6 +4,7 @@ signal health_changed(current, maximum)
 signal died
 
 var move_speed = 235.0
+var base_move_speed = 235.0
 var max_health = 100
 var health = 100
 var pickup_radius = 95.0
@@ -19,6 +20,7 @@ var outline_color = Color("#f2d36b")
 var badge_color = Color("#f2d36b")
 var weapon_visual = "revolver"
 var silhouette = "gunslinger"
+var character_id = "gunslinger"
 var sprite_path = ""
 var sprite_texture: Texture2D = null
 var sprite_walk_textures = []
@@ -31,6 +33,7 @@ var sprite_facing = Vector2.DOWN
 var sprite_direction_key = "down"
 var sprite_animation_fps = 8.0
 var sprite_flip_h = false
+var sprite_side_faces_left = false
 
 var invulnerable_time = 0.0
 var player_marker_colors = [
@@ -47,7 +50,9 @@ func _ready():
 
 func configure(data, index = 0):
 	player_index = index
+	character_id = str(data.get("id", character_id))
 	move_speed = float(data.get("speed", 235.0))
+	base_move_speed = move_speed
 	max_health = int(data.get("health", 100))
 	health = max_health
 	pickup_radius = float(data.get("pickup", 95.0))
@@ -61,9 +66,11 @@ func configure(data, index = 0):
 	weapon_visual = str(data.get("visual_weapon", weapon_visual))
 	silhouette = str(data.get("silhouette", silhouette))
 	sprite_path = str(data.get("sprite", ""))
+	sprite_side_faces_left = bool(data.get("sprite_side_faces_left", character_id == "sheriff"))
 	sprite_texture = _load_sprite(sprite_path)
 	sprite_walk_textures = _load_sprite_list(data.get("walk_sprites", []))
 	sprite_animations = _load_animation_map(data.get("animations", {}))
+	sprite_animations = _stabilize_animation_map(sprite_animations)
 	sprite_animation_fps = float(data.get("animation_fps", 8.0))
 	sprite_height = float(data.get("sprite_height", 0.0))
 	sprite_offset = data.get("sprite_offset", Vector2.ZERO)
@@ -104,9 +111,8 @@ func _update_sprite_animation(delta, input_vector):
 
 	sprite_facing = input_vector.normalized()
 	sprite_direction_key = _direction_key(sprite_facing)
-	if sprite_direction_key == "side" and absf(sprite_facing.x) > 0.08:
-		sprite_flip_h = sprite_facing.x < 0.0
-	var speed_factor = clampf(velocity.length() / maxf(move_speed, 1.0), 0.65, 1.35)
+	_update_side_flip(sprite_facing)
+	var speed_factor = clampf(velocity.length() / maxf(base_move_speed, 1.0), 0.75, 1.55)
 	sprite_anim_time += delta * speed_factor
 
 func _direction_key(direction):
@@ -124,6 +130,14 @@ func _direction_key(direction):
 	if (sprite_direction_key == "up" or sprite_direction_key == "down") and vertical > 0.05:
 		return sprite_direction_key if sprite_direction_key == vertical_key else vertical_key
 	return vertical_key if vertical >= horizontal else "side"
+
+func _update_side_flip(direction):
+	if sprite_direction_key != "side" or absf(direction.x) <= 0.08:
+		return
+	if sprite_side_faces_left:
+		sprite_flip_h = direction.x > 0.0
+	else:
+		sprite_flip_h = direction.x < 0.0
 
 func _update_aim_direction(input_vector):
 	if player_index == 0:
@@ -292,6 +306,63 @@ func _load_animation_map(animations):
 			result[str(key)] = frames
 	return result
 
+func _stabilize_animation_map(animations):
+	var result = {}
+	for key in animations.keys():
+		var frames = animations[key]
+		result[key] = _stable_animation_frames(str(key), frames)
+	return result
+
+func _stable_animation_frames(key, frames):
+	if typeof(frames) != TYPE_ARRAY or frames.size() <= 1:
+		return frames
+
+	var indices = _stable_animation_indices(key)
+	if indices.is_empty():
+		return frames
+
+	var selected = []
+	for index in indices:
+		if index >= 0 and index < frames.size():
+			selected.append(frames[index])
+	return selected if not selected.is_empty() else frames
+
+func _stable_animation_indices(key):
+	match character_id:
+		"sheriff":
+			match key:
+				"walk_down":
+					return [0, 1, 2, 3]
+				"walk_up":
+					return [0, 4, 8, 4]
+				"walk_side":
+					return [0, 1, 2, 3, 4, 5, 6, 7]
+		"bounty_hunter":
+			match key:
+				"walk_down":
+					return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+				"walk_up":
+					return [6, 7, 8, 9, 10]
+				"walk_side":
+					return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+		"shaman":
+			match key:
+				"walk_up":
+					return [3]
+				"walk_side":
+					return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+	return []
+
+func _side_visual_sign():
+	if sprite_direction_key != "side":
+		return -1.0
+	var facing_right = false
+	if sprite_side_faces_left:
+		facing_right = sprite_flip_h
+	else:
+		facing_right = not sprite_flip_h
+	return 1.0 if facing_right else -1.0
+
 func _current_sprite_texture():
 	var moving = velocity.length() > 1.0
 	if not sprite_animations.is_empty():
@@ -343,7 +414,7 @@ func _draw_sprite(texture, height, offset, modulate):
 func _marker_position():
 	if sprite_texture == null or sprite_height <= 0.0:
 		return Vector2(-15, -29)
-	var side = 1.0 if sprite_direction_key == "side" and sprite_flip_h else -1.0
+	var side = _side_visual_sign()
 	return sprite_offset + Vector2(side * sprite_height * 0.24, -sprite_height * 0.48)
 
 func _draw_body(coat, hat, scarf):
