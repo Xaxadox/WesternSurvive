@@ -11,6 +11,7 @@ const GameData = preload("res://scripts/GameData.gd")
 const WeaponFire = preload("res://scripts/weapons/WeaponFire.gd")
 const WeaponSfx = preload("res://scripts/WeaponSfx.gd")
 const StingerSfx = preload("res://scripts/StingerSfx.gd")
+const CombatSfx = preload("res://scripts/CombatSfx.gd")
 
 const SAVE_DIR = "F:/WesternSurvive/cache"
 const SAVE_PATH = "F:/WesternSurvive/cache/progress.json"
@@ -109,6 +110,7 @@ var buff_cooldown_mult = 1.0
 var xp_gain_mult = 1.0
 var passive_regen_per_second = 0.0
 var passive_regen_carry = 0.0
+var last_party_health = 0
 
 var spawn_timer = 0.0
 var spawn_batch_timer = 0.0
@@ -120,6 +122,7 @@ var current_music_volume = 0.55
 var music_tween: Tween = null
 var weapon_sfx = null
 var stinger_sfx = null
+var combat_sfx = null
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -127,6 +130,7 @@ func _ready():
 	_load_scene_dependencies()
 	_setup_weapon_sfx()
 	_setup_stinger_sfx()
+	_setup_combat_sfx()
 	get_tree().paused = false
 	if world != null:
 		world.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -253,6 +257,18 @@ func _play_stinger(stinger_id):
 	if stinger_sfx != null and is_instance_valid(stinger_sfx):
 		stinger_sfx.play_stinger(stinger_id)
 
+func _setup_combat_sfx():
+	combat_sfx = CombatSfx.new()
+	combat_sfx.name = "CombatSfx"
+	add_child(combat_sfx)
+
+func play_combat_sfx(effect_id):
+	_play_combat_sfx(effect_id)
+
+func _play_combat_sfx(effect_id):
+	if combat_sfx != null and is_instance_valid(combat_sfx):
+		combat_sfx.play_effect(effect_id)
+
 func _process(delta):
 	if get_tree().paused:
 		return
@@ -324,6 +340,7 @@ func _return_to_start_menu():
 	spawn_timer = 0.0
 	spawn_batch_timer = 0.0
 	world_item_timer = 0.0
+	last_party_health = 0
 	weapon_levels.clear()
 	weapon_timers.clear()
 	weapon_evolved.clear()
@@ -362,6 +379,7 @@ func _start_run(stage_id, character_id, player_count = 1):
 	spawn_batch_timer = 8.0
 	world_item_timer = 0.0
 	hud_update_timer = 0.0
+	last_party_health = 0
 	weapon_levels.clear()
 	weapon_timers.clear()
 	weapon_evolved.clear()
@@ -373,6 +391,7 @@ func _start_run(stage_id, character_id, player_count = 1):
 	_clear_children(obstacles)
 
 	_setup_players(character_id, active_player_count)
+	last_party_health = _party_health()
 	_record_played_menu_info(selected_stage.get("id", ""), _party_character_ids())
 	floor.set_stage(selected_stage)
 	_build_stage_obstacles()
@@ -1066,6 +1085,7 @@ func _nearest_enemy(source_position):
 
 func _on_enemy_died(enemy):
 	kills += 1
+	_play_combat_sfx("enemy_down")
 	call_deferred("_spawn_xp_pickup", enemy.global_position, enemy.xp_value)
 
 func _spawn_xp_pickup(drop_position, value):
@@ -1643,7 +1663,11 @@ func _party_max_health():
 
 func _on_player_health_changed(_current, _maximum):
 	if run_started:
-		hud.set_stats(_party_health(), _party_max_health(), xp, xp_required, level, kills, game_time)
+		var current_party_health = _party_health()
+		if last_party_health > 0 and current_party_health < last_party_health:
+			_play_combat_sfx("player_damage")
+		last_party_health = current_party_health
+		hud.set_stats(current_party_health, _party_max_health(), xp, xp_required, level, kills, game_time)
 
 func _on_player_died():
 	if not _alive_players().is_empty():

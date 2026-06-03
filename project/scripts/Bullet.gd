@@ -129,6 +129,7 @@ func _on_body_entered(body):
 		return
 
 	hit_targets[body] = true
+	_play_combat_sfx("enemy_hit")
 	if body.has_method("take_damage"):
 		body.take_damage(damage, global_position)
 	elif body.has_method("hurt"):
@@ -143,6 +144,7 @@ func _explode():
 		return
 
 	exploded = true
+	_play_combat_sfx("explosion")
 	var radius = maxf(explode_radius, hit_radius)
 	for enemy in _enemy_nodes():
 		if not is_instance_valid(enemy):
@@ -154,6 +156,11 @@ func _explode():
 				enemy.hurt(damage, global_position)
 
 	queue_free()
+
+func _play_combat_sfx(effect_id):
+	var scene = get_tree().current_scene
+	if scene != null and scene.has_method("play_combat_sfx"):
+		scene.play_combat_sfx(effect_id)
 
 func _enemy_nodes():
 	var scene = get_tree().current_scene

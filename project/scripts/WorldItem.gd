@@ -46,6 +46,7 @@ func _process_food():
 			if int(current_player.health) >= int(current_player.max_health):
 				return
 			current_player.heal(heal_amount)
+			_play_world_sfx("heal_pickup")
 			queue_free()
 			return
 
@@ -75,6 +76,7 @@ func _explode():
 
 	exploded = true
 	explosion_left = 0.18
+	_play_world_sfx("explosion")
 
 	for current_player in SpatialUtils.alive_in_radius(global_position, players, explosion_radius):
 		if current_player.has_method("take_damage"):
@@ -97,6 +99,11 @@ func _enemy_nodes():
 		if enemy_root != null:
 			return enemy_root.get_children()
 	return get_tree().get_nodes_in_group("enemies")
+
+func _play_world_sfx(effect_id):
+	var scene = get_tree().current_scene
+	if scene != null and scene.has_method("play_combat_sfx"):
+		scene.play_combat_sfx(effect_id)
 
 func _draw():
 	if exploded:

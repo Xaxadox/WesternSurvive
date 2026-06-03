@@ -30,6 +30,8 @@ func _physics_process(delta):
 	if distance < 18.0:
 		var main = get_tree().current_scene
 		if main != null and main.has_method("add_xp"):
+			if main.has_method("play_combat_sfx"):
+				main.play_combat_sfx("xp_pickup")
 			main.add_xp(value)
 		queue_free()
 
