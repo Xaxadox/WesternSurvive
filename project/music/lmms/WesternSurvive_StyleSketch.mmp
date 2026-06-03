@@ -1,0 +1,205 @@
+<?xml version="1.0"?>
+<!DOCTYPE lmms-project>
+<lmms-project type="song" version="1.0" creator="LMMS" creatorversion="1.2.2">
+  <head timesig_denominator="4" bpm="116" masterpitch="0" mastervol="90" timesig_numerator="4"/>
+  <song>
+    <trackcontainer visible="1" width="720" height="360" type="song" x="40" y="20" maximized="0" minimized="0">
+      <track type="0" muted="0" name="Menu - desert whistle" solo="0">
+        <instrumenttrack pitch="0" vol="74" fxch="0" pan="0" basenote="57" usemasterpitch="1" pitchrange="1">
+          <instrument name="tripleoscillator">
+            <tripleoscillator vol0="100" vol1="19" vol2="8" coarse0="0" coarse1="12" coarse2="24" finel0="0" finel1="0" finel2="0" finer0="0" finer1="0" finer2="0" pan0="0" pan1="0" pan2="0" wavetype0="0" wavetype1="0" wavetype2="0" phoffset0="0" phoffset1="0" phoffset2="0" modalgo1="2" modalgo2="2" modalgo3="2" stphdetun0="0" stphdetun1="0" stphdetun2="0" userwavefile0="" userwavefile1="" userwavefile2=""/>
+          </instrument>
+          <eldata fwet="1" ftype="0" fres="0.5" fcut="14000">
+            <elvol lspd="0.1" ctlenvamt="0" lpdel="0" pdel="0" amt="1" hold="0" syncmode="0" userwavefile="" latt="0" sustain="0.35" lamt="0" lshp="0" lspd_denominator="4" lspd_numerator="4" x100="0" rel="0.55" dec="0.18" att="0.035"/>
+          </eldata>
+          <chordcreator chordrange="1" chord="0" chord-enabled="0"/>
+          <arpeggiator arpdir="0" arpgate="100" arptime_denominator="4" syncmode="0" arp-enabled="0" arprange="1" arptime_numerator="4" arpmode="0" arp="0" arptime="100"/>
+          <midiport inputchannel="0" fixedinputvelocity="-1" outputcontroller="0" outputchannel="1" fixedoutputvelocity="-1" readable="0" fixedoutputnote="-1" outputprogram="1" writable="0" basevelocity="100" inputcontroller="0"/>
+          <fxchain numofeffects="0" enabled="0"/>
+        </instrumenttrack>
+        <pattern type="1" muted="0" steps="16" name="Menu whistle motif" pos="0" len="384">
+          <note key="69" vol="72" pos="0" pan="0" len="24"/>
+          <note key="76" vol="68" pos="72" pan="0" len="30"/>
+          <note key="79" vol="56" pos="144" pan="0" len="18"/>
+          <note key="72" vol="64" pos="216" pan="0" len="30"/>
+          <note key="67" vol="52" pos="312" pan="0" len="24"/>
+        </pattern>
+      </track>
+      <track type="0" muted="0" name="Ghost town - twang lead" solo="0">
+        <instrumenttrack pitch="0" vol="78" fxch="0" pan="0" basenote="57" usemasterpitch="1" pitchrange="1">
+          <instrument name="tripleoscillator">
+            <tripleoscillator vol0="88" vol1="42" vol2="18" coarse0="0" coarse1="12" coarse2="19" finel0="0" finel1="-4" finel2="0" finer0="0" finer1="0" finer2="0" pan0="0" pan1="0" pan2="0" wavetype0="3" wavetype1="0" wavetype2="2" phoffset0="0" phoffset1="60" phoffset2="0" modalgo1="2" modalgo2="2" modalgo3="2" stphdetun0="0" stphdetun1="18" stphdetun2="0" userwavefile0="" userwavefile1="" userwavefile2=""/>
+          </instrument>
+          <eldata fwet="1" ftype="7" fres="0.8" fcut="4200">
+            <elvol lspd="0.1" ctlenvamt="0" lpdel="0" pdel="0" amt="1" hold="0" syncmode="0" userwavefile="" latt="0" sustain="0.42" lamt="0" lshp="0" lspd_denominator="4" lspd_numerator="4" x100="0" rel="0.28" dec="0.22" att="0.004"/>
+          </eldata>
+          <chordcreator chordrange="1" chord="0" chord-enabled="0"/>
+          <arpeggiator arpdir="0" arpgate="100" arptime_denominator="4" syncmode="0" arp-enabled="0" arprange="1" arptime_numerator="4" arpmode="0" arp="0" arptime="100"/>
+          <midiport inputchannel="0" fixedinputvelocity="-1" outputcontroller="0" outputchannel="1" fixedoutputvelocity="-1" readable="0" fixedoutputnote="-1" outputprogram="1" writable="0" basevelocity="100" inputcontroller="0"/>
+          <fxchain numofeffects="0" enabled="0"/>
+        </instrumenttrack>
+        <pattern type="1" muted="0" steps="16" name="Ghost twang sketch" pos="384" len="768">
+          <note key="57" vol="70" pos="0" pan="0" len="24"/>
+          <note key="60" vol="82" pos="48" pan="0" len="18"/>
+          <note key="64" vol="76" pos="96" pan="0" len="24"/>
+          <note key="67" vol="82" pos="144" pan="0" len="18"/>
+          <note key="72" vol="68" pos="192" pan="0" len="24"/>
+          <note key="67" vol="76" pos="264" pan="0" len="18"/>
+          <note key="64" vol="70" pos="336" pan="0" len="24"/>
+          <note key="60" vol="80" pos="432" pan="0" len="18"/>
+          <note key="67" vol="82" pos="504" pan="0" len="18"/>
+          <note key="69" vol="68" pos="552" pan="0" len="18"/>
+          <note key="72" vol="74" pos="624" pan="0" len="24"/>
+          <note key="64" vol="62" pos="720" pan="0" len="24"/>
+        </pattern>
+      </track>
+      <track type="0" muted="0" name="Canyon - syncopated chip" solo="0">
+        <instrumenttrack pitch="0" vol="68" fxch="0" pan="0" basenote="57" usemasterpitch="1" pitchrange="1">
+          <instrument name="tripleoscillator">
+            <tripleoscillator vol0="54" vol1="50" vol2="14" coarse0="0" coarse1="12" coarse2="24" finel0="0" finel1="0" finel2="0" finer0="0" finer1="0" finer2="0" pan0="0" pan1="0" pan2="0" wavetype0="1" wavetype1="2" wavetype2="0" phoffset0="0" phoffset1="120" phoffset2="0" modalgo1="2" modalgo2="2" modalgo3="2" stphdetun0="0" stphdetun1="0" stphdetun2="0" userwavefile0="" userwavefile1="" userwavefile2=""/>
+          </instrument>
+          <eldata fwet="1" ftype="0" fres="0.5" fcut="14000">
+            <elvol lspd="0.1" ctlenvamt="0" lpdel="0" pdel="0" amt="1" hold="0" syncmode="0" userwavefile="" latt="0" sustain="0.18" lamt="0" lshp="0" lspd_denominator="4" lspd_numerator="4" x100="0" rel="0.10" dec="0.08" att="0.002"/>
+          </eldata>
+          <chordcreator chordrange="1" chord="0" chord-enabled="0"/>
+          <arpeggiator arpdir="0" arpgate="100" arptime_denominator="4" syncmode="0" arp-enabled="0" arprange="1" arptime_numerator="4" arpmode="0" arp="0" arptime="100"/>
+          <midiport inputchannel="0" fixedinputvelocity="-1" outputcontroller="0" outputchannel="1" fixedoutputvelocity="-1" readable="0" fixedoutputnote="-1" outputprogram="1" writable="0" basevelocity="100" inputcontroller="0"/>
+          <fxchain numofeffects="0" enabled="0"/>
+        </instrumenttrack>
+        <pattern type="1" muted="0" steps="16" name="Canyon chip sketch" pos="1152" len="768">
+          <note key="60" vol="82" pos="0" pan="0" len="12"/>
+          <note key="62" vol="74" pos="36" pan="0" len="12"/>
+          <note key="63" vol="84" pos="72" pan="0" len="12"/>
+          <note key="67" vol="88" pos="120" pan="0" len="12"/>
+          <note key="70" vol="76" pos="168" pan="0" len="12"/>
+          <note key="69" vol="78" pos="228" pan="0" len="12"/>
+          <note key="67" vol="86" pos="288" pan="0" len="12"/>
+          <note key="63" vol="72" pos="336" pan="0" len="12"/>
+          <note key="62" vol="76" pos="396" pan="0" len="12"/>
+          <note key="67" vol="90" pos="456" pan="0" len="12"/>
+          <note key="72" vol="82" pos="504" pan="0" len="12"/>
+          <note key="74" vol="70" pos="600" pan="0" len="12"/>
+          <note key="70" vol="78" pos="660" pan="0" len="12"/>
+          <note key="67" vol="82" pos="720" pan="0" len="12"/>
+        </pattern>
+      </track>
+      <track type="0" muted="0" name="Broken fort - duel reed" solo="0">
+        <instrumenttrack pitch="0" vol="72" fxch="0" pan="0" basenote="57" usemasterpitch="1" pitchrange="1">
+          <instrument name="tripleoscillator">
+            <tripleoscillator vol0="82" vol1="28" vol2="18" coarse0="0" coarse1="12" coarse2="19" finel0="0" finel1="0" finel2="-8" finer0="0" finer1="0" finer2="0" pan0="0" pan1="0" pan2="0" wavetype0="0" wavetype1="2" wavetype2="3" phoffset0="0" phoffset1="90" phoffset2="0" modalgo1="2" modalgo2="2" modalgo3="2" stphdetun0="0" stphdetun1="12" stphdetun2="0" userwavefile0="" userwavefile1="" userwavefile2=""/>
+          </instrument>
+          <eldata fwet="1" ftype="7" fres="0.75" fcut="3600">
+            <elvol lspd="0.1" ctlenvamt="0" lpdel="0" pdel="0" amt="1" hold="0" syncmode="0" userwavefile="" latt="0" sustain="0.30" lamt="0" lshp="0" lspd_denominator="4" lspd_numerator="4" x100="0" rel="0.36" dec="0.14" att="0.010"/>
+          </eldata>
+          <chordcreator chordrange="1" chord="0" chord-enabled="0"/>
+          <arpeggiator arpdir="0" arpgate="100" arptime_denominator="4" syncmode="0" arp-enabled="0" arprange="1" arptime_numerator="4" arpmode="0" arp="0" arptime="100"/>
+          <midiport inputchannel="0" fixedinputvelocity="-1" outputcontroller="0" outputchannel="1" fixedoutputvelocity="-1" readable="0" fixedoutputnote="-1" outputprogram="1" writable="0" basevelocity="100" inputcontroller="0"/>
+          <fxchain numofeffects="0" enabled="0"/>
+        </instrumenttrack>
+        <pattern type="1" muted="0" steps="16" name="Broken fort reed sketch" pos="1920" len="768">
+          <note key="56" vol="68" pos="0" pan="0" len="36"/>
+          <note key="59" vol="70" pos="96" pan="0" len="24"/>
+          <note key="62" vol="76" pos="168" pan="0" len="18"/>
+          <note key="63" vol="82" pos="240" pan="0" len="18"/>
+          <note key="66" vol="70" pos="336" pan="0" len="24"/>
+          <note key="63" vol="74" pos="432" pan="0" len="18"/>
+          <note key="62" vol="68" pos="504" pan="0" len="18"/>
+          <note key="59" vol="72" pos="576" pan="0" len="24"/>
+          <note key="56" vol="62" pos="696" pan="0" len="36"/>
+        </pattern>
+      </track>
+      <track type="0" muted="0" name="Mine - jungle mallet" solo="0">
+        <instrumenttrack pitch="0" vol="76" fxch="0" pan="0" basenote="57" usemasterpitch="1" pitchrange="1">
+          <instrument name="tripleoscillator">
+            <tripleoscillator vol0="72" vol1="36" vol2="20" coarse0="0" coarse1="12" coarse2="24" finel0="0" finel1="-10" finel2="0" finer0="0" finer1="0" finer2="0" pan0="0" pan1="0" pan2="0" wavetype0="2" wavetype1="0" wavetype2="0" phoffset0="0" phoffset1="180" phoffset2="90" modalgo1="2" modalgo2="2" modalgo3="2" stphdetun0="0" stphdetun1="8" stphdetun2="0" userwavefile0="" userwavefile1="" userwavefile2=""/>
+          </instrument>
+          <eldata fwet="1" ftype="0" fres="0.4" fcut="9000">
+            <elvol lspd="0.1" ctlenvamt="0" lpdel="0" pdel="0" amt="1" hold="0" syncmode="0" userwavefile="" latt="0" sustain="0.10" lamt="0" lshp="0" lspd_denominator="4" lspd_numerator="4" x100="0" rel="0.16" dec="0.18" att="0.002"/>
+          </eldata>
+          <chordcreator chordrange="1" chord="0" chord-enabled="0"/>
+          <arpeggiator arpdir="0" arpgate="100" arptime_denominator="4" syncmode="0" arp-enabled="0" arprange="1" arptime_numerator="4" arpmode="0" arp="0" arptime="100"/>
+          <midiport inputchannel="0" fixedinputvelocity="-1" outputcontroller="0" outputchannel="1" fixedoutputvelocity="-1" readable="0" fixedoutputnote="-1" outputprogram="1" writable="0" basevelocity="100" inputcontroller="0"/>
+          <fxchain numofeffects="0" enabled="0"/>
+        </instrumenttrack>
+        <pattern type="1" muted="0" steps="16" name="Mine mallet sketch" pos="2688" len="768">
+          <note key="55" vol="74" pos="0" pan="0" len="18"/>
+          <note key="50" vol="62" pos="72" pan="0" len="12"/>
+          <note key="57" vol="78" pos="144" pan="0" len="18"/>
+          <note key="62" vol="84" pos="216" pan="0" len="18"/>
+          <note key="64" vol="66" pos="288" pan="0" len="12"/>
+          <note key="62" vol="78" pos="360" pan="0" len="18"/>
+          <note key="57" vol="70" pos="432" pan="0" len="12"/>
+          <note key="55" vol="82" pos="504" pan="0" len="18"/>
+          <note key="52" vol="68" pos="600" pan="0" len="18"/>
+          <note key="50" vol="60" pos="696" pan="0" len="24"/>
+        </pattern>
+      </track>
+      <track type="0" muted="0" name="Bonus - bright chase" solo="0">
+        <instrumenttrack pitch="0" vol="70" fxch="0" pan="0" basenote="57" usemasterpitch="1" pitchrange="1">
+          <instrument name="tripleoscillator">
+            <tripleoscillator vol0="48" vol1="58" vol2="20" coarse0="0" coarse1="12" coarse2="24" finel0="0" finel1="0" finel2="0" finer0="0" finer1="0" finer2="0" pan0="0" pan1="0" pan2="0" wavetype0="1" wavetype1="2" wavetype2="0" phoffset0="0" phoffset1="120" phoffset2="0" modalgo1="2" modalgo2="2" modalgo3="2" stphdetun0="0" stphdetun1="0" stphdetun2="0" userwavefile0="" userwavefile1="" userwavefile2=""/>
+          </instrument>
+          <eldata fwet="1" ftype="0" fres="0.5" fcut="12000">
+            <elvol lspd="0.1" ctlenvamt="0" lpdel="0" pdel="0" amt="1" hold="0" syncmode="0" userwavefile="" latt="0" sustain="0.22" lamt="0" lshp="0" lspd_denominator="4" lspd_numerator="4" x100="0" rel="0.12" dec="0.08" att="0.002"/>
+          </eldata>
+          <chordcreator chordrange="1" chord="0" chord-enabled="0"/>
+          <arpeggiator arpdir="0" arpgate="100" arptime_denominator="4" syncmode="0" arp-enabled="0" arprange="1" arptime_numerator="4" arpmode="0" arp="0" arptime="100"/>
+          <midiport inputchannel="0" fixedinputvelocity="-1" outputcontroller="0" outputchannel="1" fixedoutputvelocity="-1" readable="0" fixedoutputnote="-1" outputprogram="1" writable="0" basevelocity="100" inputcontroller="0"/>
+          <fxchain numofeffects="0" enabled="0"/>
+        </instrumenttrack>
+        <pattern type="1" muted="0" steps="16" name="Bonus chase sketch" pos="3456" len="768">
+          <note key="67" vol="82" pos="0" pan="0" len="12"/>
+          <note key="72" vol="88" pos="36" pan="0" len="12"/>
+          <note key="74" vol="76" pos="72" pan="0" len="12"/>
+          <note key="76" vol="86" pos="108" pan="0" len="12"/>
+          <note key="79" vol="90" pos="144" pan="0" len="12"/>
+          <note key="76" vol="76" pos="216" pan="0" len="12"/>
+          <note key="74" vol="72" pos="252" pan="0" len="12"/>
+          <note key="72" vol="84" pos="288" pan="0" len="12"/>
+          <note key="67" vol="78" pos="384" pan="0" len="12"/>
+          <note key="71" vol="80" pos="420" pan="0" len="12"/>
+          <note key="74" vol="88" pos="456" pan="0" len="12"/>
+          <note key="79" vol="92" pos="504" pan="0" len="12"/>
+          <note key="83" vol="84" pos="600" pan="0" len="12"/>
+          <note key="79" vol="78" pos="672" pan="0" len="12"/>
+          <note key="76" vol="82" pos="720" pan="0" len="12"/>
+        </pattern>
+      </track>
+    </trackcontainer>
+    <track type="6" muted="0" name="Automation track" solo="0">
+      <automationtrack/>
+      <automationpattern prog="0" mute="0" name="Tempo" pos="0" tens="1" len="4224">
+        <time pos="0" value="88"/>
+        <time pos="384" value="116"/>
+        <time pos="1152" value="134"/>
+        <time pos="1920" value="104"/>
+        <time pos="2688" value="100"/>
+        <time pos="3456" value="146"/>
+      </automationpattern>
+      <automationpattern prog="0" mute="0" name="Master volume" pos="0" tens="1" len="4224">
+        <time pos="0" value="90"/>
+      </automationpattern>
+      <automationpattern prog="0" mute="0" name="Master pitch" pos="0" tens="1" len="4224">
+        <time pos="0" value="0"/>
+      </automationpattern>
+    </track>
+    <fxmixer visible="1" width="647" height="332" x="9" y="441" maximized="0" minimized="0">
+      <fxchannel num="0" muted="0" volume="1" name="Master" soloed="0">
+        <fxchain numofeffects="0" enabled="0"/>
+      </fxchannel>
+    </fxmixer>
+    <ControllerRackView visible="0" width="258" height="173" x="664" y="444" maximized="0" minimized="0"/>
+    <pianoroll visible="0" width="640" height="480" x="1" y="1" maximized="1" minimized="0"/>
+    <automationeditor visible="0" width="640" height="400" x="356" y="129" maximized="0" minimized="0"/>
+    <projectnotes visible="1" width="520" height="360" x="780" y="20" maximized="0" minimized="0"><![CDATA[<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html><head><meta name="qrichtext" content="1" /><style type="text/css">
+p, li { white-space: pre-wrap; }
+</style></head><body style=" font-family:'Verdana'; font-size:10pt; font-weight:400; font-style:normal;">
+<p>Western Survive style sketch. This is an original LMMS reference file for the procedural data in res://scripts/MusicData.gd.</p>
+<p>Sections: 0 Menu desert whistle, 384 Ghost town twang, 1152 Canyon syncopated chip, 1920 Broken fort duel reed, 2688 Mine jungle mallet, 3456 Bonus bright chase.</p>
+<p>References are language-level only: cinematic western whistle/twang, 16-bit jungle mallet atmosphere, and late-90s platformer syncopation. Do not copy protected melodies into these patterns.</p>
+</body></html>]]></projectnotes>
+    <timeline lp0pos="0" lp1pos="4224" lpstate="0"/>
+    <controllers/>
+  </song>
+</lmms-project>
