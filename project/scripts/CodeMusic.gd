@@ -19,6 +19,7 @@ var audio_mutex = Mutex.new()
 var thread_active = false
 var chunk_frame_count = 735
 var _target_volume = 0.55
+var _target_intensity = 0.0
 var _pending_stage_id = DEFAULT_STAGE_ID
 var _state_dirty = true
 
@@ -30,6 +31,7 @@ var phase_harmony = 0.0
 var phase_pad = 0.0
 var sample_clock = 0
 var music_volume = 0.55
+var music_intensity = 0.0
 var stage_id = "menu"
 var rng = RandomNumberGenerator.new()
 var last_step_tick = -1
@@ -86,7 +88,7 @@ func configure(new_stage_id):
 	audio_mutex.unlock()
 
 	if audio_thread == null or not audio_thread.is_started():
-		_apply_pending_audio_state(_pending_stage_id, true, _target_volume)
+		_apply_pending_audio_state(_pending_stage_id, true, _target_volume, _target_intensity)
 
 func set_music_volume(value):
 	audio_mutex.lock()
@@ -96,12 +98,21 @@ func set_music_volume(value):
 	if audio_thread == null or not audio_thread.is_started():
 		music_volume = _target_volume
 
+func set_music_intensity(value):
+	audio_mutex.lock()
+	_target_intensity = clampf(value, 0.0, 1.0)
+	audio_mutex.unlock()
+
+	if audio_thread == null or not audio_thread.is_started():
+		music_intensity = _target_intensity
+
 func _audio_thread_loop():
 	while true:
 		audio_mutex.lock()
 		var should_continue = thread_active
 		var next_stage_id = _pending_stage_id
 		var next_volume = _target_volume
+		var next_intensity = _target_intensity
 		var should_reset_state = _state_dirty
 		_state_dirty = false
 		audio_mutex.unlock()
@@ -109,7 +120,7 @@ func _audio_thread_loop():
 		if not should_continue:
 			break
 
-		_apply_pending_audio_state(next_stage_id, should_reset_state, next_volume)
+		_apply_pending_audio_state(next_stage_id, should_reset_state, next_volume, next_intensity)
 
 		if playback == null:
 			OS.delay_msec(1)
@@ -127,8 +138,9 @@ func _audio_thread_loop():
 
 		playback.push_buffer(chunk)
 
-func _apply_pending_audio_state(new_stage_id, should_reset_state, new_volume):
+func _apply_pending_audio_state(new_stage_id, should_reset_state, new_volume, new_intensity = 0.0):
 	music_volume = clampf(float(new_volume), 0.0, 1.0)
+	music_intensity = clampf(float(new_intensity), 0.0, 1.0)
 	if not should_reset_state:
 		return
 
@@ -178,13 +190,14 @@ func _next_frame():
 	var string_sample = _process_string_voices()
 	var lead_tone = _lead_tone(profile, phase_lead)
 	var harmony_tone = _lead_tone(profile, phase_harmony)
-	var lead = lead_tone * lead_level * float(profile.get("lead_gain", 0.15)) * 0.80
-	var harmony = harmony_tone * harmony_level * float(profile.get("harmony_gain", 0.05)) * 0.45
-	var bass = _sine(phase_bass) * bass_level * float(profile.get("bass_gain", 0.13)) * 0.16
+	var intensity = clampf(music_intensity, 0.0, 1.0)
+	var lead = lead_tone * lead_level * float(profile.get("lead_gain", 0.15)) * (0.72 + intensity * 0.22)
+	var harmony = harmony_tone * harmony_level * float(profile.get("harmony_gain", 0.05)) * (0.40 + intensity * 0.18)
+	var bass = _sine(phase_bass) * bass_level * float(profile.get("bass_gain", 0.13)) * (0.13 + intensity * 0.12)
 	var pad = _sine(phase_pad) * (0.7 + sin(float(sample_clock) / sample_rate * TAU * 0.23) * 0.3) * float(profile.get("pad_gain", 0.03))
-	var kick = _kick(step, step_pos, float(profile.get("kick_gain", 0.10)), profile)
-	var snare = _snare(step, step_pos, float(profile.get("snare_gain", 0.03)), profile)
-	var hat = _hat(step, step_pos, float(profile.get("hat_gain", 0.04)), profile)
+	var kick = _kick(step, step_pos, float(profile.get("kick_gain", 0.10)) * (0.82 + intensity * 0.42), profile)
+	var snare = _snare(step, step_pos, float(profile.get("snare_gain", 0.03)) * (0.78 + intensity * 0.36), profile)
+	var hat = _hat(step, step_pos, float(profile.get("hat_gain", 0.04)) * (0.62 + intensity * 0.70), profile)
 	lead_level *= 0.99955
 	harmony_level *= 0.99935
 	bass_level *= 0.99965
@@ -202,6 +215,9 @@ func _trigger_step(profile, root, step_tick, step, phrase, melody_markov, chords
 	if step % 2 == 0:
 		current_melody_note = _get_next_markov_note(current_melody_note, melody_markov)
 		melody_note = current_melody_note
+		if melody_note <= -90 and rng.randf() < music_intensity * 0.30:
+			current_melody_note = _get_next_markov_note(current_melody_note, melody_markov)
+			melody_note = current_melody_note
 
 	var chord = chords[int(step_tick / 8) % chords.size()]
 	var harmony_note = int(chord[(int(step_tick / 4) + phrase) % chord.size()])

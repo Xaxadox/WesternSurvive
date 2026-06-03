@@ -162,6 +162,10 @@ func _set_runtime_music_volume(value):
 	if is_instance_valid(music):
 		music.set_music_volume(current_music_volume)
 
+func _set_runtime_music_intensity(value):
+	if is_instance_valid(music) and music.has_method("set_music_intensity"):
+		music.set_music_intensity(clampf(float(value), 0.0, 1.0))
+
 func _configure_audio_stage(stage_id):
 	var next_stage_id = stage_id if stage_id != "" else MENU_STAGE_ID
 	if is_instance_valid(music):
@@ -197,6 +201,7 @@ func _cut_music_for_game_over():
 
 	_stop_music_tween()
 	_set_runtime_music_volume(0.0)
+	_set_runtime_music_intensity(0.0)
 	_configure_audio_stage(MENU_STAGE_ID)
 
 	var next_volume = _music_target_volume()
@@ -261,11 +266,22 @@ func _process(delta):
 	_process_world_items(delta)
 	_process_passive_buffs(delta)
 	_process_weapons(delta)
+	_update_music_intensity()
 	hud_update_timer -= delta
 	if hud_update_timer <= 0.0:
 		hud_update_timer = 0.12
 		hud.set_stats(_party_health(), _party_max_health(), xp, xp_required, level, kills, game_time)
 		hud.set_weapons(_weapon_summary())
+
+func _update_music_intensity():
+	if not run_started or is_game_over:
+		_set_runtime_music_intensity(0.0)
+		return
+
+	var time_pressure = clampf(game_time / 540.0, 0.0, 0.62)
+	var kill_pressure = clampf(float(kills) / 220.0, 0.0, 0.30)
+	var level_pressure = clampf(float(level - 1) / 18.0, 0.0, 0.18)
+	_set_runtime_music_intensity(clampf(0.16 + time_pressure + kill_pressure + level_pressure, 0.0, 1.0))
 
 func _input(event):
 	if _pause_pressed(event) and _can_toggle_manual_pause():
@@ -318,6 +334,7 @@ func _return_to_start_menu():
 	_clear_children(world_items)
 	_clear_children(obstacles)
 	_reset_world_to_menu()
+	_set_runtime_music_intensity(0.0)
 	_transition_music_to(MENU_STAGE_ID)
 	hud.show_pause(false)
 	hud.hide_game_over()
@@ -361,6 +378,7 @@ func _start_run(stage_id, character_id, player_count = 1):
 	_build_stage_obstacles()
 	_configure_stage_mechanics()
 	_transition_music_to(selected_stage.get("id", "ghost_town"))
+	_set_runtime_music_intensity(0.18)
 	_play_stinger("stage_start")
 	hud.hide_start_menu()
 	hud.hide_game_over()
