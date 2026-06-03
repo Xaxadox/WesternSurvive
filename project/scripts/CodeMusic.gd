@@ -9,6 +9,7 @@ const MusicData = preload("res://scripts/MusicData.gd")
 const DEFAULT_KICK_STEPS = [0, 8, 16, 24]
 const DEFAULT_SNARE_STEPS = [8, 14, 24, 30]
 const DEFAULT_HAT_STEPS = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31]
+const AudioMix = preload("res://scripts/AudioMix.gd")
 
 var player: AudioStreamPlayer = null
 var playback: AudioStreamGeneratorPlayback = null
@@ -47,6 +48,7 @@ func _ready():
 	if DisplayServer.get_name() == "headless":
 		return
 
+	AudioMix.ensure_buses()
 	rng.randomize()
 	chunk_frame_count = maxi(1, int(sample_rate / AUDIO_CHUNKS_PER_SECOND))
 	generator = AudioStreamGenerator.new()
@@ -54,6 +56,7 @@ func _ready():
 	generator.buffer_length = 0.18
 	player = AudioStreamPlayer.new()
 	player.stream = generator
+	player.bus = AudioMix.BUS_MUSIC
 	add_child(player)
 	player.play()
 	playback = player.get_stream_playback()

@@ -1,5 +1,6 @@
 extends Node
 
+const AudioMix = preload("res://scripts/AudioMix.gd")
 const SAMPLE_RATE = 44100
 const MAX_PLAYERS = 18
 const PREWARM_PLAYERS = 8
@@ -25,6 +26,7 @@ var sound_profiles = {
 }
 
 func _ready():
+	AudioMix.ensure_buses()
 	rng.randomize()
 	_ensure_streams()
 	for i in range(PREWARM_PLAYERS):
@@ -59,6 +61,7 @@ func _available_player():
 func _create_player():
 	var player = AudioStreamPlayer.new()
 	player.process_mode = Node.PROCESS_MODE_ALWAYS
+	player.bus = AudioMix.BUS_SFX
 	add_child(player)
 	players.append(player)
 	if players.size() > MAX_PLAYERS:
