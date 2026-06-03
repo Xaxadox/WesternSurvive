@@ -10,6 +10,7 @@ const SpatialUtils = preload("res://scripts/SpatialUtils.gd")
 const GameData = preload("res://scripts/GameData.gd")
 const WeaponFire = preload("res://scripts/weapons/WeaponFire.gd")
 const WeaponSfx = preload("res://scripts/WeaponSfx.gd")
+const StingerSfx = preload("res://scripts/StingerSfx.gd")
 
 const SAVE_DIR = "F:/WesternSurvive/cache"
 const SAVE_PATH = "F:/WesternSurvive/cache/progress.json"
@@ -118,12 +119,14 @@ var target_music_volume = 0.55
 var current_music_volume = 0.55
 var music_tween: Tween = null
 var weapon_sfx = null
+var stinger_sfx = null
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	rng.randomize()
 	_load_scene_dependencies()
 	_setup_weapon_sfx()
+	_setup_stinger_sfx()
 	get_tree().paused = false
 	if world != null:
 		world.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -235,6 +238,15 @@ func _setup_weapon_sfx():
 	weapon_sfx = WeaponSfx.new()
 	weapon_sfx.name = "WeaponSfx"
 	add_child(weapon_sfx)
+
+func _setup_stinger_sfx():
+	stinger_sfx = StingerSfx.new()
+	stinger_sfx.name = "StingerSfx"
+	add_child(stinger_sfx)
+
+func _play_stinger(stinger_id):
+	if stinger_sfx != null and is_instance_valid(stinger_sfx):
+		stinger_sfx.play_stinger(stinger_id)
 
 func _process(delta):
 	if get_tree().paused:
@@ -349,6 +361,7 @@ func _start_run(stage_id, character_id, player_count = 1):
 	_build_stage_obstacles()
 	_configure_stage_mechanics()
 	_transition_music_to(selected_stage.get("id", "ghost_town"))
+	_play_stinger("stage_start")
 	hud.hide_start_menu()
 	hud.hide_game_over()
 	hud.show_pause(false)
@@ -1058,6 +1071,7 @@ func _try_level_up():
 	xp -= xp_required
 	level += 1
 	xp_required = int(ceil(float(xp_required) * 1.20 + 5.0))
+	_play_stinger("level_up")
 	var choices = _roll_upgrade_choices()
 	if choices.is_empty():
 		hud.show_toast(_t("all_upgrades_maxed"))
@@ -1377,6 +1391,7 @@ func _t(key):
 			return key
 
 func _on_upgrade_selected(choice):
+	_play_stinger("upgrade_select")
 	_apply_upgrade(choice)
 	level_choice_open = false
 	get_tree().paused = false
@@ -1487,6 +1502,7 @@ func _check_stage_weapon_unlock(weapon_id):
 	unlocked_weapons.append(unlocked_weapon)
 	progress["unlocked_weapons"] = unlocked_weapons
 	hud.show_toast(_localized(rule, "text") if rule.has("text") else _t("weapon_unlocked"))
+	_play_stinger("unlock")
 	_unlock_bonus_if_ready()
 	_save_progress()
 
@@ -1501,6 +1517,7 @@ func _unlock_bonus_if_ready():
 		unlocked_stages.append("bonus")
 		progress["unlocked_stages"] = unlocked_stages
 		hud.show_toast(_t("bonus_unlocked"))
+		_play_stinger("bonus_unlock")
 
 func _weapon_level(weapon_id):
 	return int(weapon_levels.get(weapon_id, 1))
@@ -1614,9 +1631,11 @@ func _on_player_died():
 	if not _alive_players().is_empty():
 		_update_party_camera(0.0)
 		hud.show_toast("%s %d." % [_t("player_down"), _alive_players().size()])
+		_play_stinger("player_down")
 		return
 
 	is_game_over = true
+	_play_stinger("game_over")
 	_cut_music_for_game_over()
 	get_tree().paused = true
 	hud.show_pause(false)
