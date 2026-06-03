@@ -54,6 +54,7 @@ const SOFT_ENEMY_CAP = 145
 @onready var mine_darkness_layer = $MineDarkness
 @onready var mine_darkness = $MineDarkness/Fog
 @onready var music = $CodeMusic
+@onready var ambience = $StageAmbience
 
 var enemy_scene: PackedScene
 var bullet_scene: PackedScene
@@ -142,9 +143,8 @@ func _ready():
 		music.beat_hit.connect(_on_music_beat_hit)
 	_load_progress()
 	_apply_settings(progress.get("settings", {}))
-	if is_instance_valid(music):
-		music.configure(MENU_STAGE_ID)
-		_set_runtime_music_volume(_music_target_volume())
+	_configure_audio_stage(MENU_STAGE_ID)
+	_set_runtime_music_volume(_music_target_volume())
 	hud.set_stats(player.health, player.max_health, xp, xp_required, level, kills, game_time)
 	hud.set_run_context(_t("select_stage"), _t("select_character"))
 	hud.set_weapons([])
@@ -158,6 +158,13 @@ func _set_runtime_music_volume(value):
 	current_music_volume = clampf(float(value), 0.0, 1.0)
 	if is_instance_valid(music):
 		music.set_music_volume(current_music_volume)
+
+func _configure_audio_stage(stage_id):
+	var next_stage_id = stage_id if stage_id != "" else MENU_STAGE_ID
+	if is_instance_valid(music):
+		music.configure(next_stage_id)
+	if is_instance_valid(ambience):
+		ambience.configure(next_stage_id)
 
 func _stop_music_tween():
 	if music_tween != null:
@@ -178,7 +185,7 @@ func _transition_music_to(stage_id, fade_out_duration = MUSIC_STAGE_FADE_OUT, fa
 	var next_stage_id = stage_id if stage_id != "" else MENU_STAGE_ID
 	var next_volume = _music_target_volume()
 	tween.tween_method(Callable(self, "_set_runtime_music_volume"), current_music_volume, 0.0, fade_out_duration)
-	tween.tween_callback(Callable(music, "configure").bind(next_stage_id))
+	tween.tween_callback(Callable(self, "_configure_audio_stage").bind(next_stage_id))
 	tween.tween_method(Callable(self, "_set_runtime_music_volume"), 0.0, next_volume, fade_in_duration)
 
 func _cut_music_for_game_over():
@@ -187,7 +194,7 @@ func _cut_music_for_game_over():
 
 	_stop_music_tween()
 	_set_runtime_music_volume(0.0)
-	music.configure(MENU_STAGE_ID)
+	_configure_audio_stage(MENU_STAGE_ID)
 
 	var next_volume = _music_target_volume()
 	if next_volume <= 0.0:
