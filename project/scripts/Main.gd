@@ -871,7 +871,7 @@ func _enemy_visual_data():
 					"res://assets/enemies/frames/ghost/walk_side_4.png"
 				]
 			},
-			"animation_fps": 8.5
+			"sprite_walk_cycle_seconds": 0.78
 		}
 	return {
 			"sprite": "res://assets/enemies/frames/bandit/idle_down_0.png",
@@ -986,7 +986,7 @@ func _enemy_visual_data():
 					"res://assets/enemies/frames/bandit/walk_side_23.png"
 				]
 			},
-			"animation_fps": 8.5
+			"sprite_walk_cycle_seconds": 0.78
 		}
 
 func _fire_weapon(weapon_id, shooter):

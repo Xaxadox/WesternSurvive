@@ -29,7 +29,7 @@ var sprite_anim_time = 0.0
 var sprite_idle_time = 0.0
 var sprite_facing = Vector2.DOWN
 var sprite_direction_key = "down"
-var sprite_animation_fps = 8.5
+var sprite_walk_cycle_seconds = 0.78
 var sprite_flip_h = false
 
 var attack_cooldown = 0.0
@@ -61,7 +61,7 @@ func setup(data):
 	sprite_texture = _load_sprite(sprite_path)
 	sprite_walk_textures = _load_sprite_list(data.get("walk_sprites", []))
 	sprite_animations = _load_animation_map(data.get("animations", {}))
-	sprite_animation_fps = float(data.get("animation_fps", 8.5))
+	sprite_walk_cycle_seconds = float(data.get("sprite_walk_cycle_seconds", 0.78))
 	sprite_height = float(data.get("sprite_height", 0.0))
 	sprite_offset = data.get("sprite_offset", Vector2.ZERO)
 	sprite_anim_time = 0.0
@@ -229,7 +229,9 @@ func _current_sprite_texture():
 		if active != null:
 			return active
 	if moving and not sprite_walk_textures.is_empty():
-		var index = int(sprite_anim_time * sprite_animation_fps) % sprite_walk_textures.size()
+		var cycle_seconds = maxf(sprite_walk_cycle_seconds, 0.05)
+		var cycle_position = fposmod(sprite_anim_time, cycle_seconds) / cycle_seconds
+		var index = mini(int(cycle_position * sprite_walk_textures.size()), sprite_walk_textures.size() - 1)
 		return sprite_walk_textures[index]
 	return sprite_texture
 
@@ -237,8 +239,13 @@ func _animation_frame(key, moving):
 	var frames = sprite_animations.get(key, [])
 	if typeof(frames) != TYPE_ARRAY or frames.is_empty():
 		return null
-	var time = sprite_anim_time if moving else sprite_idle_time
-	var fps = sprite_animation_fps if moving else 1.5
+	if moving:
+		var cycle_seconds = maxf(sprite_walk_cycle_seconds, 0.05)
+		var cycle_position = fposmod(sprite_anim_time, cycle_seconds) / cycle_seconds
+		var index = mini(int(cycle_position * frames.size()), frames.size() - 1)
+		return frames[index]
+	var time = sprite_idle_time
+	var fps = 1.5
 	var index = int(time * fps) % frames.size()
 	return frames[index]
 

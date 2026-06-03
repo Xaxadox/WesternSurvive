@@ -22,6 +22,7 @@ var weapon_visual = "revolver"
 var silhouette = "gunslinger"
 var character_id = "gunslinger"
 var sprite_path = ""
+var sprite_weapon_overlay = false
 var sprite_texture: Texture2D = null
 var sprite_walk_textures = []
 var sprite_animations = {}
@@ -31,7 +32,7 @@ var sprite_anim_time = 0.0
 var sprite_idle_time = 0.0
 var sprite_facing = Vector2.DOWN
 var sprite_direction_key = "down"
-var sprite_animation_fps = 8.0
+var sprite_walk_cycle_seconds = 0.82
 var sprite_flip_h = false
 var sprite_side_faces_left = false
 
@@ -66,12 +67,12 @@ func configure(data, index = 0):
 	weapon_visual = str(data.get("visual_weapon", weapon_visual))
 	silhouette = str(data.get("silhouette", silhouette))
 	sprite_path = str(data.get("sprite", ""))
+	sprite_weapon_overlay = bool(data.get("sprite_weapon_overlay", false))
 	sprite_side_faces_left = bool(data.get("sprite_side_faces_left", character_id == "sheriff"))
 	sprite_texture = _load_sprite(sprite_path)
 	sprite_walk_textures = _load_sprite_list(data.get("walk_sprites", []))
 	sprite_animations = _load_animation_map(data.get("animations", {}))
-	sprite_animations = _stabilize_animation_map(sprite_animations)
-	sprite_animation_fps = float(data.get("animation_fps", 8.0))
+	sprite_walk_cycle_seconds = float(data.get("sprite_walk_cycle_seconds", 0.82))
 	sprite_height = float(data.get("sprite_height", 0.0))
 	sprite_offset = data.get("sprite_offset", Vector2.ZERO)
 	sprite_anim_time = 0.0
@@ -263,6 +264,8 @@ func _draw():
 	var active_sprite = _current_sprite_texture()
 	if active_sprite != null and sprite_height > 0.0:
 		_draw_sprite(active_sprite, sprite_height, sprite_offset, Color(1.25, 1.12, 0.72, 1.0) if blink else Color.WHITE)
+		if sprite_weapon_overlay:
+			_draw_weapon(aim_direction.normalized())
 	else:
 		_draw_body(coat, hat, scarf)
 		_draw_weapon(aim_direction.normalized())
@@ -306,53 +309,6 @@ func _load_animation_map(animations):
 			result[str(key)] = frames
 	return result
 
-func _stabilize_animation_map(animations):
-	var result = {}
-	for key in animations.keys():
-		var frames = animations[key]
-		result[key] = _stable_animation_frames(str(key), frames)
-	return result
-
-func _stable_animation_frames(key, frames):
-	if typeof(frames) != TYPE_ARRAY or frames.size() <= 1:
-		return frames
-
-	var indices = _stable_animation_indices(key)
-	if indices.is_empty():
-		return frames
-
-	var selected = []
-	for index in indices:
-		if index >= 0 and index < frames.size():
-			selected.append(frames[index])
-	return selected if not selected.is_empty() else frames
-
-func _stable_animation_indices(key):
-	match character_id:
-		"sheriff":
-			match key:
-				"walk_down":
-					return [0, 1, 2, 3]
-				"walk_up":
-					return [0, 4, 8, 4]
-				"walk_side":
-					return [0, 1, 2, 3, 4, 5, 6, 7]
-		"bounty_hunter":
-			match key:
-				"walk_down":
-					return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-				"walk_up":
-					return [6, 7, 8, 9, 10]
-				"walk_side":
-					return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-		"shaman":
-			match key:
-				"walk_up":
-					return [3]
-				"walk_side":
-					return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-	return []
-
 func _side_visual_sign():
 	if sprite_direction_key != "side":
 		return -1.0
@@ -377,7 +333,9 @@ func _current_sprite_texture():
 		if active != null:
 			return active
 	if moving and not sprite_walk_textures.is_empty():
-		var index = int(sprite_anim_time * sprite_animation_fps) % sprite_walk_textures.size()
+		var cycle_seconds = maxf(sprite_walk_cycle_seconds, 0.05)
+		var cycle_position = fposmod(sprite_anim_time, cycle_seconds) / cycle_seconds
+		var index = mini(int(cycle_position * sprite_walk_textures.size()), sprite_walk_textures.size() - 1)
 		return sprite_walk_textures[index]
 	return sprite_texture
 
@@ -385,8 +343,13 @@ func _animation_frame(key, moving):
 	var frames = sprite_animations.get(key, [])
 	if typeof(frames) != TYPE_ARRAY or frames.is_empty():
 		return null
-	var time = sprite_anim_time if moving else sprite_idle_time
-	var fps = sprite_animation_fps if moving else 1.5
+	if moving:
+		var cycle_seconds = maxf(sprite_walk_cycle_seconds, 0.05)
+		var cycle_position = fposmod(sprite_anim_time, cycle_seconds) / cycle_seconds
+		var index = mini(int(cycle_position * frames.size()), frames.size() - 1)
+		return frames[index]
+	var time = sprite_idle_time
+	var fps = 1.5
 	var index = int(time * fps) % frames.size()
 	return frames[index]
 

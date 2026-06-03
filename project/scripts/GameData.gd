@@ -25,6 +25,7 @@ static var CHARACTER_DATA = [
 		"visual_weapon": "revolver",
 		"silhouette": "gunslinger",
 		"sprite": "res://assets/characters/frames/gunslinger/idle_down_0.png",
+		"sprite_weapon_overlay": true,
 		"menu_icon": "res://assets/menu/characters/gunslinger.png",
 		"sprite_height": 72.0,
 		"sprite_offset": Vector2(0, -10),
@@ -60,7 +61,7 @@ static var CHARACTER_DATA = [
 				"res://assets/characters/frames/gunslinger/walk_side_3.png"
 			]
 		},
-		"animation_fps": 8.0
+		"sprite_walk_cycle_seconds": 0.82
 	},
 	{
 		"id": "sheriff",
@@ -171,7 +172,7 @@ static var CHARACTER_DATA = [
 				"res://assets/characters/frames/sheriff/walk_side_20.png"
 			]
 		},
-		"animation_fps": 8.0
+		"sprite_walk_cycle_seconds": 0.82
 	},
 	{
 		"id": "bounty_hunter",
@@ -324,7 +325,7 @@ static var CHARACTER_DATA = [
 				"res://assets/characters/frames/bounty_hunter/walk_side_29.png"
 			]
 		},
-		"animation_fps": 8.0
+		"sprite_walk_cycle_seconds": 0.82
 	},
 	{
 		"id": "shaman",
@@ -423,7 +424,7 @@ static var CHARACTER_DATA = [
 				"res://assets/characters/frames/shaman/walk_side_20.png"
 			]
 		},
-		"animation_fps": 8.0
+		"sprite_walk_cycle_seconds": 0.82
 	}
 ]
 
