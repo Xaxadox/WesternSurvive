@@ -6,6 +6,9 @@ const SILENCE_NOTE = -99
 const DEFAULT_STAGE_ID = "menu"
 const AUDIO_CHUNKS_PER_SECOND = 60.0
 const MusicData = preload("res://scripts/MusicData.gd")
+const DEFAULT_KICK_STEPS = [0, 8, 16, 24]
+const DEFAULT_SNARE_STEPS = [8, 14, 24, 30]
+const DEFAULT_HAT_STEPS = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31]
 
 var player: AudioStreamPlayer = null
 var playback: AudioStreamGeneratorPlayback = null
@@ -34,6 +37,7 @@ var lead_level = 0.0
 var harmony_freq_current = 330.0
 var harmony_level = 0.0
 var bass_freq_current = 110.0
+var bass_level = 0.0
 var string_voices = []
 var current_melody_note: int = 0
 var stage_profiles = MusicData.stage_profiles()
@@ -138,6 +142,7 @@ func _reset_music_state(profile):
 	last_step_tick = -1
 	lead_level = 0.0
 	harmony_level = 0.0
+	bass_level = 0.0
 	lead_freq_current = 440.0
 	harmony_freq_current = 330.0
 	bass_freq_current = 110.0
@@ -168,15 +173,18 @@ func _next_frame():
 	phase_hat = fmod(phase_hat + 7600.0 / sample_rate, 1.0)
 
 	var string_sample = _process_string_voices()
-	var lead = _harmonica(phase_lead) * lead_level * float(profile.get("lead_gain", 0.15)) * 0.80
-	var harmony = _harmonica(phase_harmony) * harmony_level * float(profile.get("harmony_gain", 0.05)) * 0.45
-	var bass = _sine(phase_bass) * lead_level * float(profile.get("bass_gain", 0.13)) * 0.08
+	var lead_tone = _lead_tone(profile, phase_lead)
+	var harmony_tone = _lead_tone(profile, phase_harmony)
+	var lead = lead_tone * lead_level * float(profile.get("lead_gain", 0.15)) * 0.80
+	var harmony = harmony_tone * harmony_level * float(profile.get("harmony_gain", 0.05)) * 0.45
+	var bass = _sine(phase_bass) * bass_level * float(profile.get("bass_gain", 0.13)) * 0.16
 	var pad = _sine(phase_pad) * (0.7 + sin(float(sample_clock) / sample_rate * TAU * 0.23) * 0.3) * float(profile.get("pad_gain", 0.03))
-	var kick = _kick(step, step_pos, float(profile.get("kick_gain", 0.10)))
-	var snare = _snare(step, step_pos, float(profile.get("snare_gain", 0.03)))
-	var hat = _hat(step, step_pos, float(profile.get("hat_gain", 0.04)))
+	var kick = _kick(step, step_pos, float(profile.get("kick_gain", 0.10)), profile)
+	var snare = _snare(step, step_pos, float(profile.get("snare_gain", 0.03)), profile)
+	var hat = _hat(step, step_pos, float(profile.get("hat_gain", 0.04)), profile)
 	lead_level *= 0.99955
 	harmony_level *= 0.99935
+	bass_level *= 0.99965
 	var sample = string_sample + lead + harmony + bass + pad + kick + snare + hat
 	sample *= music_volume
 	sample_clock += 1
@@ -195,10 +203,8 @@ func _trigger_step(profile, root, step_tick, step, phrase, melody_markov, chords
 	var chord = chords[int(step_tick / 8) % chords.size()]
 	var harmony_note = int(chord[(int(step_tick / 4) + phrase) % chord.size()])
 	var bass_note = int(bass_line[int(step_tick / 4) % bass_line.size()])
-	var is_kick = step % 8 == 0 or (stage_id == "canyon" and step % 16 == 12) or (stage_id == "bonus" and step % 8 == 6)
-	var is_snare = step % 16 == 8 or step % 16 == 14
-	if stage_id == "mine":
-		is_snare = step % 16 == 12
+	var is_kick = _step_in_pattern(step, profile.get("kick_steps", DEFAULT_KICK_STEPS))
+	var is_snare = _step_in_pattern(step, profile.get("snare_steps", DEFAULT_SNARE_STEPS))
 
 	if is_kick:
 		_emit_beat_hit("kick")
@@ -213,6 +219,7 @@ func _trigger_step(profile, root, step_tick, step, phrase, melody_markov, chords
 
 	if step % 4 == 0:
 		bass_freq_current = _note_freq(root, bass_note)
+		bass_level = 1.0
 		_pluck_string(bass_freq_current, float(profile.get("bass_gain", 0.13)) * 0.95, 0.996)
 		for degree in chord:
 			_pluck_string(_note_freq(root * 2.0, int(degree)), float(profile.get("harmony_gain", 0.05)) * 0.70, 0.992)
@@ -224,6 +231,29 @@ func _trigger_step(profile, root, step_tick, step, phrase, melody_markov, chords
 
 func _emit_beat_hit(type):
 	call_deferred("emit_signal", "beat_hit", type)
+
+func _lead_tone(profile, phase):
+	match str(profile.get("lead_voice", "reed")):
+		"whistle":
+			return _sine(phase) * 0.88 + _sine(phase * 2.0) * 0.08 + _sine(phase * 3.0) * 0.04
+		"mallet":
+			return _triangle(phase) * 0.66 + _sine(phase * 2.0) * 0.22 + _sine(phase * 5.0) * 0.07
+		"chip":
+			return _triangle(phase) * 0.42 + _square(phase) * 0.32 + _sine(phase * 2.0) * 0.16
+		"twang":
+			return _saw(phase) * 0.28 + _harmonica(phase) * 0.72
+		_:
+			return _harmonica(phase)
+
+func _step_in_pattern(step, pattern):
+	if typeof(pattern) != TYPE_ARRAY or pattern.is_empty():
+		return false
+
+	var normalized_step = int(step) % 32
+	for pattern_step in pattern:
+		if normalized_step == int(pattern_step) % 32:
+			return true
+	return false
 
 func _get_next_markov_note(current_note, markov_matrix):
 	if typeof(markov_matrix) != TYPE_DICTIONARY:
@@ -293,27 +323,23 @@ func _harmonica(phase):
 func _note_freq(root, semitone):
 	return root * pow(2.0, float(semitone) / 12.0)
 
-func _kick(step, step_pos, gain):
-	var hit = step % 8 == 0 or (stage_id == "canyon" and step % 16 == 12) or (stage_id == "bonus" and step % 8 == 6)
+func _kick(step, step_pos, gain, profile):
+	var hit = _step_in_pattern(step, profile.get("kick_steps", DEFAULT_KICK_STEPS))
 	if not hit or step_pos > 0.24:
 		return 0.0
 	var env = pow(1.0 - step_pos / 0.24, 3.0)
 	var tone = sin(phase_bass * TAU * (1.0 + env * 0.7))
 	return tone * env * gain
 
-func _snare(step, step_pos, gain):
-	var hit = step % 16 == 8 or step % 16 == 14
-	if stage_id == "mine":
-		hit = step % 16 == 12
+func _snare(step, step_pos, gain, profile):
+	var hit = _step_in_pattern(step, profile.get("snare_steps", DEFAULT_SNARE_STEPS))
 	if not hit or step_pos > 0.12:
 		return 0.0
 	var noise = rng.randf_range(-1.0, 1.0)
 	return noise * pow(1.0 - step_pos / 0.12, 2.0) * gain
 
-func _hat(step, step_pos, gain):
-	var hit = step % 2 == 1
-	if stage_id == "broken_fort":
-		hit = step % 4 == 1 or step % 4 == 3
+func _hat(step, step_pos, gain, profile):
+	var hit = _step_in_pattern(step, profile.get("hat_steps", DEFAULT_HAT_STEPS))
 	if not hit or step_pos > 0.08:
 		return 0.0
 	var noise = rng.randf_range(-1.0, 1.0)
