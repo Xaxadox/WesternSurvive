@@ -80,7 +80,7 @@ func _explode():
 
 	for current_player in SpatialUtils.alive_in_radius(global_position, players, explosion_radius):
 		if current_player.has_method("take_damage"):
-			current_player.take_damage(damage_amount, global_position)
+			current_player.take_damage(damage_amount, global_position, "bomb")
 		else:
 			current_player.damage(damage_amount)
 

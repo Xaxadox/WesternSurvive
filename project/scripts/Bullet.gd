@@ -5,17 +5,41 @@ var damage = 6
 var pierce = 1
 var lifetime = 1.6
 var hit_targets = {}
+var origin_position = Vector2.ZERO
+var source_weapon = ""
+var source_character_id = ""
+var source_shooter = null
+var damage_kind = ""
 var visual = "bullet"
 var color = Color("#ffe7a0")
 var line_length = 20.0
 var hit_radius = 5.0
 var spin_speed = 0.0
+var medium_range = 0.0
+var far_range = 0.0
+var medium_damage_mult = 1.0
+var far_damage_mult = 1.0
+var no_damage_past_far = false
+var slow_factor = 1.0
+var slow_duration = 0.0
+var crit_range = 0.0
+var crit_chance = 0.0
+var crit_multiplier = 1.0
+var crit_speed_bonus = 0.0
+var crit_speed_duration = 0.0
 var explode_radius = 0.0
 var explode_on_hit = false
 var explode_on_expire = false
 var exploded = false
 var ricochet_count = 0
 var max_ricochets = 2
+var ground_fire_on_hit = false
+var ground_fire_on_expire = false
+var ground_fire_active = false
+var ground_fire_radius = 0.0
+var ground_fire_duration = 0.0
+var dot_interval = 0.45
+var dot_timer = 0.0
 
 func _ready():
 	collision_layer = 0
@@ -31,21 +55,48 @@ func setup(direction, amount, bullet_speed, bullet_pierce, bullet_lifetime, opti
 	damage = amount
 	pierce = bullet_pierce
 	lifetime = bullet_lifetime
+	origin_position = global_position
 	rotation = safe_direction.angle()
+	source_weapon = str(options.get("source_weapon", ""))
+	source_character_id = str(options.get("source_character_id", ""))
+	source_shooter = options.get("source_shooter", null)
+	damage_kind = str(options.get("damage_kind", ""))
 	visual = options.get("visual", visual)
 	color = options.get("color", color)
 	line_length = float(options.get("line_length", line_length))
 	hit_radius = float(options.get("hit_radius", hit_radius))
 	spin_speed = float(options.get("spin", 0.0))
+	medium_range = float(options.get("medium_range", 0.0))
+	far_range = float(options.get("far_range", 0.0))
+	medium_damage_mult = float(options.get("medium_damage_mult", 1.0))
+	far_damage_mult = float(options.get("far_damage_mult", 1.0))
+	no_damage_past_far = bool(options.get("no_damage_past_far", false))
+	slow_factor = float(options.get("slow_factor", 1.0))
+	slow_duration = float(options.get("slow_duration", 0.0))
+	crit_range = float(options.get("crit_range", 0.0))
+	crit_chance = float(options.get("crit_chance", 0.0))
+	crit_multiplier = float(options.get("crit_multiplier", 1.0))
+	crit_speed_bonus = float(options.get("crit_speed_bonus", 0.0))
+	crit_speed_duration = float(options.get("crit_speed_duration", 0.0))
 	explode_radius = float(options.get("explode_radius", 0.0))
 	explode_on_hit = bool(options.get("explode_on_hit", false))
 	explode_on_expire = bool(options.get("explode_on_expire", false))
 	max_ricochets = int(options.get("max_ricochets", max_ricochets))
+	ground_fire_on_hit = bool(options.get("ground_fire_on_hit", false))
+	ground_fire_on_expire = bool(options.get("ground_fire_on_expire", false))
+	ground_fire_radius = float(options.get("ground_fire_radius", 0.0))
+	ground_fire_duration = float(options.get("ground_fire_duration", 0.0))
+	dot_interval = float(options.get("dot_interval", dot_interval))
+	dot_timer = 0.0
 	_set_collision_radius(hit_radius)
 	call_deferred("_damage_existing_overlaps")
 	queue_redraw()
 
 func _physics_process(delta):
+	if ground_fire_active:
+		_process_ground_fire(delta)
+		return
+
 	var next_global_position = global_position + velocity * delta
 	if _handle_stage_wall(next_global_position):
 		if is_queued_for_deletion():
@@ -60,10 +111,22 @@ func _physics_process(delta):
 
 	lifetime -= delta
 	if lifetime <= 0.0:
-		if explode_on_expire:
+		if ground_fire_on_expire:
+			_start_ground_fire()
+		elif explode_on_expire:
 			_explode()
 		else:
 			queue_free()
+
+func _process_ground_fire(delta):
+	lifetime -= delta
+	dot_timer -= delta
+	if dot_timer <= 0.0:
+		dot_timer = maxf(dot_interval, 0.05)
+		_damage_ground_fire()
+	if lifetime <= 0.0:
+		queue_free()
+	queue_redraw()
 
 func _set_collision_radius(radius):
 	var shape = CircleShape2D.new()
@@ -81,7 +144,9 @@ func _handle_stage_wall(next_global_position):
 		_apply_ricochet(floor, next_global_position)
 		return true
 
-	if explode_on_hit or explode_on_expire:
+	if ground_fire_on_hit or ground_fire_on_expire:
+		_start_ground_fire()
+	elif explode_on_hit or explode_on_expire:
 		_explode()
 	else:
 		queue_free()
@@ -119,9 +184,13 @@ func _damage_existing_overlaps():
 		_on_body_entered(body)
 
 func _on_body_entered(body):
-	if exploded or not body.is_in_group("enemies"):
+	if exploded or ground_fire_active or not body.is_in_group("enemies"):
 		return
 	if hit_targets.has(body):
+		return
+
+	if ground_fire_on_hit:
+		_start_ground_fire()
 		return
 
 	if explode_on_hit:
@@ -129,15 +198,64 @@ func _on_body_entered(body):
 		return
 
 	hit_targets[body] = true
-	_play_combat_sfx("enemy_hit")
-	if body.has_method("take_damage"):
-		body.take_damage(damage, global_position)
-	elif body.has_method("hurt"):
-		body.hurt(damage, global_position)
+	var final_damage = _hit_damage(body)
+	if final_damage > 0:
+		_apply_damage_to_body(body, final_damage, true, global_position)
+		_apply_slow_to_body(body)
 
 	pierce -= 1
 	if pierce <= 0:
 		queue_free()
+
+func _hit_damage(body):
+	var final_damage = float(damage)
+	var distance = origin_position.distance_to(body.global_position)
+	if far_range > 0.0 and distance > far_range:
+		if no_damage_past_far:
+			return 0
+		final_damage *= far_damage_mult
+	elif medium_range > 0.0 and distance > medium_range:
+		final_damage *= medium_damage_mult
+
+	if crit_range > 0.0 and distance >= crit_range and randf() <= clampf(crit_chance, 0.0, 1.0):
+		final_damage *= maxf(crit_multiplier, 1.0)
+		_apply_crit_bonus()
+
+	if final_damage <= 0.0:
+		return 0
+	return maxi(1, int(ceil(final_damage)))
+
+func _apply_damage_to_body(body, amount, play_hit_sfx, hit_position):
+	if play_hit_sfx:
+		_play_combat_sfx("enemy_hit")
+	if body.has_method("take_damage"):
+		body.take_damage(amount, hit_position, _damage_source())
+	elif body.has_method("hurt"):
+		body.hurt(amount, hit_position)
+
+func _apply_slow_to_body(body):
+	if slow_duration <= 0.0 or slow_factor >= 1.0:
+		return
+	if body.has_method("apply_slow"):
+		body.apply_slow(slow_factor, slow_duration)
+
+func _apply_crit_bonus():
+	if source_character_id != "bounty_hunter":
+		return
+	if crit_speed_bonus <= 0.0 or crit_speed_duration <= 0.0:
+		return
+	if is_instance_valid(source_shooter) and source_shooter.has_method("apply_temporary_speed_bonus"):
+		source_shooter.apply_temporary_speed_bonus(crit_speed_bonus, crit_speed_duration)
+
+func _damage_source():
+	var source = {
+		"weapon": source_weapon,
+		"character_id": source_character_id,
+		"damage_kind": damage_kind
+	}
+	if is_instance_valid(source_shooter):
+		source["shooter"] = source_shooter
+	return source
 
 func _explode():
 	if exploded:
@@ -150,12 +268,32 @@ func _explode():
 		if not is_instance_valid(enemy):
 			continue
 		if global_position.distance_to(enemy.global_position) <= radius:
-			if enemy.has_method("take_damage"):
-				enemy.take_damage(damage, global_position)
-			elif enemy.has_method("hurt"):
-				enemy.hurt(damage, global_position)
+			_apply_damage_to_body(enemy, damage, false, global_position)
 
 	queue_free()
+
+func _start_ground_fire():
+	if ground_fire_active:
+		return
+
+	ground_fire_active = true
+	exploded = false
+	velocity = Vector2.ZERO
+	rotation = 0.0
+	hit_targets.clear()
+	lifetime = maxf(ground_fire_duration, 0.1)
+	hit_radius = maxf(ground_fire_radius, hit_radius)
+	_set_collision_radius(hit_radius)
+	_play_combat_sfx("explosion")
+	dot_timer = 0.0
+	queue_redraw()
+
+func _damage_ground_fire():
+	for enemy in _enemy_nodes():
+		if not is_instance_valid(enemy):
+			continue
+		if global_position.distance_to(enemy.global_position) <= hit_radius:
+			_apply_damage_to_body(enemy, damage, false, enemy.global_position)
 
 func _play_combat_sfx(effect_id):
 	var scene = get_tree().current_scene
@@ -216,6 +354,11 @@ func _draw_dynamite():
 	draw_circle(Vector2(14, -11), 3, Color("#ffcf5a"))
 
 func _draw_fire():
+	if ground_fire_active:
+		draw_circle(Vector2.ZERO, hit_radius, Color(1.0, 0.20, 0.05, 0.18))
+		draw_circle(Vector2.ZERO, hit_radius * 0.58, Color(1.0, 0.48, 0.08, 0.30))
+		draw_circle(Vector2(6, -4), maxf(hit_radius * 0.22, 8.0), Color(1.0, 0.84, 0.22, 0.52))
+		return
 	draw_circle(Vector2.ZERO, maxf(hit_radius * 0.65, 7.0), Color(1.0, 0.26, 0.08, 0.55))
 	draw_circle(Vector2(3, -2), maxf(hit_radius * 0.35, 5.0), Color(1.0, 0.82, 0.22, 0.75))
 

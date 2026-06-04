@@ -19,6 +19,9 @@ var body_radius = 15.0
 var target_radius = 17.0
 var attack_delay = 0.55
 var knockback = 10.0
+var slow_factor = 1.0
+var slow_time = 0.0
+var last_damage_source = {}
 var sprite_path = ""
 var sprite_texture: Texture2D = null
 var sprite_walk_textures = []
@@ -57,6 +60,9 @@ func setup(data):
 	attack_range = maxf(float(data.get("attack_range", attack_range)), stand_off_range + 4.0)
 	attack_delay = data.get("attack_delay", attack_delay)
 	knockback = data.get("knockback", knockback)
+	slow_factor = 1.0
+	slow_time = 0.0
+	last_damage_source = {}
 	sprite_path = str(data.get("sprite", ""))
 	sprite_texture = _load_sprite(sprite_path)
 	sprite_walk_textures = _load_sprite_list(data.get("walk_sprites", []))
@@ -78,17 +84,21 @@ func _physics_process(delta):
 		return
 
 	attack_cooldown = maxf(attack_cooldown - delta, 0.0)
+	slow_time = maxf(slow_time - delta, 0.0)
+	if slow_time <= 0.0:
+		slow_factor = 1.0
+	var current_speed = speed * slow_factor
 	var to_target = target.global_position - global_position
 	var distance = to_target.length()
 	var direction = to_target / distance if distance > 0.001 else Vector2.RIGHT
 
 	if distance > attack_range:
-		velocity = direction * speed
+		velocity = direction * current_speed
 		global_position += velocity * delta
 	else:
 		velocity = Vector2.ZERO
 		if distance < stand_off_range:
-			var retreat = minf(speed * delta * 0.55, stand_off_range - distance)
+			var retreat = minf(current_speed * delta * 0.55, stand_off_range - distance)
 			global_position -= direction * retreat
 		if attack_cooldown <= 0.0 and target.has_method("damage"):
 			target.damage(contact_damage)
@@ -129,7 +139,9 @@ func _direction_key(direction):
 func hurt(amount, source_position):
 	take_damage(amount, source_position)
 
-func take_damage(amount, source_position = null):
+func take_damage(amount, source_position = null, source_info = {}):
+	if typeof(source_info) == TYPE_DICTIONARY:
+		last_damage_source = source_info.duplicate()
 	health -= amount
 	var hit_position = global_position if source_position == null else source_position
 	if hit_position != global_position:
@@ -140,6 +152,14 @@ func take_damage(amount, source_position = null):
 		call_deferred("queue_free")
 	else:
 		queue_redraw()
+
+func apply_slow(factor, duration):
+	slow_factor = minf(slow_factor, clampf(float(factor), 0.12, 1.0))
+	slow_time = maxf(slow_time, float(duration))
+	queue_redraw()
+
+func get_last_damage_source():
+	return last_damage_source.duplicate()
 
 func _apply_player_soft_collision(current_target):
 	if not is_instance_valid(current_target):
@@ -165,9 +185,11 @@ func _draw():
 	draw_circle(Vector2(3, 8), 14, Color(0, 0, 0, 0.24))
 	var active_sprite = _current_sprite_texture()
 	if active_sprite != null and sprite_height > 0.0:
-		_draw_sprite(active_sprite, sprite_height, sprite_offset, Color.WHITE)
+		var modulate = Color("#b7d8ff") if slow_time > 0.0 else Color.WHITE
+		_draw_sprite(active_sprite, sprite_height, sprite_offset, modulate)
 	else:
-		draw_circle(Vector2.ZERO, 15, body_color)
+		var active_body_color = body_color.lerp(Color("#9bbcff"), 0.45) if slow_time > 0.0 else body_color
+		draw_circle(Vector2.ZERO, 15, active_body_color)
 		draw_circle(Vector2(0, -8), 9, Color("#d38c62"))
 		draw_rect(Rect2(-15, -17, 30, 5), hat_color)
 		draw_rect(Rect2(-8, -23, 16, 8), hat_color)

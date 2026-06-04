@@ -89,22 +89,29 @@ static func _fire_revolver(context, weapon_id, shooter, color, bonus_shots):
 
 	var level_value = context._weapon_level(weapon_id)
 	var evolved = context._is_evolved(weapon_id)
-	var shots = 1 + int((level_value - 1) / 2) + bonus_shots
+	var shots = 6 + int(level_value >= 4) + int(evolved) + bonus_shots
 	if evolved:
-		shots += 2
+		shots = maxi(shots, 8)
 
-	var damage = context._scaled_damage(7 + level_value * 3 + bonus_shots * 2, shooter)
+	var damage = context._scaled_damage(13 + level_value * 4 + bonus_shots * 2, shooter)
 	var pierce = 1 + int(level_value >= 4) + int(evolved) * 2
-	var spread = 0.08 if shots > 1 else 0.0
+	var spread = 0.15 if shots > 1 else 0.0
 
 	for i in range(shots):
 		var offset = (float(i) - float(shots - 1) / 2.0) * spread
-		context._fire_projectile(shooter, base_direction.rotated(offset), damage, 1120.0 + level_value * 35.0, pierce, 1.42, {
+		context._fire_projectile(shooter, base_direction.rotated(offset), damage, 1180.0 + level_value * 32.0, pierce, 0.92, {
 			"hit_radius": 6.0,
 			"visual": "bullet",
 			"color": color,
-			"line_length": 22.0
+			"line_length": 23.0,
+			"medium_range": 520.0,
+			"far_range": 880.0,
+			"medium_damage_mult": 0.72,
+			"far_damage_mult": 0.38
 		})
+
+	if context.has_method("_on_weapon_reloading"):
+		context._on_weapon_reloading(weapon_id, shooter)
 
 static func _fire_shotgun(context, weapon_id, shooter, bonus_pellets):
 	var base_direction = context._weapon_direction(weapon_id, shooter)
@@ -113,23 +120,28 @@ static func _fire_shotgun(context, weapon_id, shooter, bonus_pellets):
 
 	var level_value = context._weapon_level(weapon_id)
 	var evolved = context._is_evolved(weapon_id)
-	var pellets = 4 + level_value + bonus_pellets
-	if evolved:
-		pellets += 3
+	var pellets = 6 + level_value + bonus_pellets + int(evolved) * 2
 
-	var damage = context._scaled_damage(4 + level_value * 2 + bonus_pellets, shooter)
-	var spread = 0.56 + level_value * 0.025
+	var damage = context._scaled_damage(6 + level_value * 3 + bonus_pellets, shooter)
+	var spread = 0.58 + level_value * 0.03
 	var pierce = 1 + int(evolved)
 
 	for i in range(pellets):
 		var t = 0.0
 		if pellets > 1:
 			t = float(i) / float(pellets - 1) - 0.5
-		context._fire_projectile(shooter, base_direction.rotated(t * spread), damage, 930.0, pierce, 0.68, {
-			"hit_radius": 5.5,
+		context._fire_projectile(shooter, base_direction.rotated(t * spread), damage, 930.0, pierce, 0.48, {
+			"hit_radius": 5.8,
 			"visual": "bullet",
 			"color": Color("#f2d799"),
-			"line_length": 14.0
+			"line_length": 14.0,
+			"medium_range": 180.0,
+			"far_range": 385.0,
+			"medium_damage_mult": 0.44,
+			"far_damage_mult": 0.0,
+			"no_damage_past_far": true,
+			"slow_factor": 0.55,
+			"slow_duration": 1.25 + float(level_value) * 0.08
 		})
 
 static func _fire_explosive(context, weapon_id, shooter, visual):
@@ -145,12 +157,26 @@ static func _fire_explosive(context, weapon_id, shooter, visual):
 	var speed = 520.0 + level_value * 34.0
 	var lifetime = 0.82
 	if is_fire:
-		radius += 12.0
-		damage = context._scaled_damage(6 + level_value * 3, shooter)
-		lifetime = 0.72
+		radius = 62.0 + level_value * 12.0
+		damage = context._scaled_damage(3 + level_value * 2, shooter)
+		lifetime = 0.64
 	if evolved:
 		radius += 36.0
-		damage += context._scaled_damage(8, shooter)
+		damage += context._scaled_damage(3 if is_fire else 8, shooter)
+
+	if is_fire:
+		context._fire_projectile(shooter, direction, damage, speed, 1, lifetime, {
+			"hit_radius": 9.0,
+			"visual": visual,
+			"color": Color("#f15d32"),
+			"ground_fire_on_hit": true,
+			"ground_fire_on_expire": true,
+			"ground_fire_radius": radius,
+			"ground_fire_duration": 3.0 + float(level_value) * 0.35 + int(evolved) * 1.15,
+			"dot_interval": 0.42,
+			"damage_kind": "fire"
+		})
+		return
 
 	context._fire_projectile(shooter, direction, damage, speed, 1, lifetime, {
 		"hit_radius": 9.0,
@@ -214,11 +240,16 @@ static func _fire_rifle(context, weapon_id, shooter, color, visual):
 	var level_value = context._weapon_level(weapon_id)
 	var evolved = context._is_evolved(weapon_id)
 	var secret_bonus = 5 if weapon_id == "rail_spike" else 0
-	context._fire_projectile(shooter, direction, context._scaled_damage(15 + level_value * 6 + secret_bonus, shooter), 1480.0, 3 + level_value + int(evolved) * 7, 1.06, {
+	context._fire_projectile(shooter, direction, context._scaled_damage(18 + level_value * 5 + secret_bonus, shooter), 1480.0, 3 + level_value + int(evolved) * 7, 1.08, {
 		"hit_radius": 7.0 + int(evolved) * 2.0,
 		"visual": visual,
 		"color": color,
-		"line_length": 34.0 + level_value * 2.0
+		"line_length": 34.0 + level_value * 2.0,
+		"crit_range": 560.0,
+		"crit_chance": 0.18 + float(level_value) * 0.045 + int(evolved) * 0.12,
+		"crit_multiplier": 1.85 + int(evolved) * 0.20,
+		"crit_speed_bonus": 36.0 + float(level_value) * 3.0,
+		"crit_speed_duration": 1.35
 	})
 
 static func _fire_horseshoe(context, weapon_id, shooter):

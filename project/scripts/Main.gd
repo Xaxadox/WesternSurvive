@@ -102,6 +102,7 @@ var manual_pause_open = false
 
 var weapon_levels = {}
 var weapon_timers = {}
+var weapon_magazine_shots_left = {}
 var weapon_evolved = {}
 var firing_weapon_context = ""
 var buff_levels = {}
@@ -343,6 +344,7 @@ func _return_to_start_menu():
 	last_party_health = 0
 	weapon_levels.clear()
 	weapon_timers.clear()
+	weapon_magazine_shots_left.clear()
 	weapon_evolved.clear()
 	_reset_run_buffs()
 	_clear_children(enemies)
@@ -382,6 +384,7 @@ func _start_run(stage_id, character_id, player_count = 1):
 	last_party_health = 0
 	weapon_levels.clear()
 	weapon_timers.clear()
+	weapon_magazine_shots_left.clear()
 	weapon_evolved.clear()
 	_reset_run_buffs()
 	_clear_children(enemies)
@@ -751,7 +754,31 @@ func _process_weapons(delta):
 		if weapon_timers[weapon_id] <= 0.0:
 			for shooter in _alive_players():
 				_fire_weapon(weapon_id, shooter)
-			weapon_timers[weapon_id] = _weapon_cooldown(weapon_id)
+			_schedule_next_weapon_fire(weapon_id)
+
+func _schedule_next_weapon_fire(weapon_id):
+	if not _weapon_uses_magazine(weapon_id):
+		weapon_timers[weapon_id] = _weapon_cooldown(weapon_id)
+		return
+
+	var shots_left = int(weapon_magazine_shots_left.get(weapon_id, _weapon_magazine_size(weapon_id))) - 1
+	if shots_left > 0:
+		weapon_magazine_shots_left[weapon_id] = shots_left
+		weapon_timers[weapon_id] = _weapon_followup_delay(weapon_id)
+		return
+
+	weapon_magazine_shots_left[weapon_id] = _weapon_magazine_size(weapon_id)
+	weapon_timers[weapon_id] = _weapon_cooldown(weapon_id)
+
+func _weapon_uses_magazine(weapon_id):
+	return weapon_id == "shotgun" or weapon_id == "coach_gun"
+
+func _weapon_magazine_size(_weapon_id):
+	return 2
+
+func _weapon_followup_delay(weapon_id):
+	var level_value = _weapon_level(weapon_id)
+	return maxf(0.18, 0.34 - float(level_value - 1) * 0.025)
 
 func _spawn_enemy(initial):
 	if enemies.get_child_count() >= _enemy_cap():
@@ -1004,10 +1031,24 @@ func _fire_projectile(shooter, direction, damage, speed, pierce, lifetime, optio
 	if safe_direction == Vector2.ZERO:
 		safe_direction = Vector2.RIGHT.rotated(rng.randf_range(0.0, TAU))
 
+	var projectile_options = options.duplicate(true)
+	var source_character = _character_for_player(shooter)
+	projectile_options["source_weapon"] = firing_weapon_context
+	projectile_options["source_character_id"] = str(source_character.get("id", ""))
+	projectile_options["source_shooter"] = shooter
+
 	var bullet = bullet_scene.instantiate()
 	projectiles.add_child(bullet)
 	bullet.global_position = shooter.global_position + safe_direction * 24.0
-	bullet.setup(safe_direction, damage, speed, pierce, lifetime, options)
+	bullet.setup(safe_direction, damage, speed, pierce, lifetime, projectile_options)
+
+func _on_weapon_reloading(weapon_id, shooter):
+	var character = _character_for_player(shooter)
+	if str(character.get("id", "")) != "gunslinger" or not _is_magnum_weapon(weapon_id):
+		return
+	if shooter != null and shooter.has_method("apply_temporary_speed_bonus"):
+		var bonus = 28.0 + float(_weapon_level(weapon_id)) * 4.0 + (8.0 if _is_evolved(weapon_id) else 0.0)
+		shooter.apply_temporary_speed_bonus(bonus, 1.05)
 
 func _weapon_cooldown(weapon_id):
 	var level_value = _weapon_level(weapon_id)
@@ -1085,8 +1126,31 @@ func _nearest_enemy(source_position):
 
 func _on_enemy_died(enemy):
 	kills += 1
+	_handle_character_kill_perks(enemy)
 	_play_combat_sfx("enemy_down")
 	call_deferred("_spawn_xp_pickup", enemy.global_position, enemy.xp_value)
+
+func _handle_character_kill_perks(enemy):
+	if enemy == null or not enemy.has_method("get_last_damage_source"):
+		return
+
+	var source = enemy.get_last_damage_source()
+	if typeof(source) != TYPE_DICTIONARY:
+		return
+
+	var weapon_id = str(source.get("weapon", ""))
+	if str(source.get("character_id", "")) != "gunslinger" or not _is_magnum_weapon(weapon_id):
+		return
+	if not weapon_timers.has(weapon_id):
+		return
+
+	var reduction = 0.14 + float(_weapon_level(weapon_id) - 1) * 0.025
+	if _is_evolved(weapon_id):
+		reduction += 0.08
+	weapon_timers[weapon_id] = maxf(float(weapon_timers.get(weapon_id, 0.0)) - reduction, 0.05)
+
+func _is_magnum_weapon(weapon_id):
+	return weapon_id == "revolver" or weapon_id == "golden_revolver"
 
 func _spawn_xp_pickup(drop_position, value):
 	var pickup = xp_pickup_scene.instantiate()
@@ -1201,8 +1265,8 @@ func _weapon_preview_text(weapon_id, level_value):
 	match weapon_id:
 		"revolver", "golden_revolver":
 			var bonus_shots = 2 if weapon_id == "golden_revolver" else 0
-			var shots = 1 + int((level_value - 1) / 2) + bonus_shots
-			var damage = 7 + level_value * 3 + bonus_shots * 2
+			var shots = 6 + int(level_value >= 4) + bonus_shots
+			var damage = 13 + level_value * 4 + bonus_shots * 2
 			var targets = 1 + int(level_value >= 4)
 			parts = [
 				_metric("damage", damage),
@@ -1212,13 +1276,15 @@ func _weapon_preview_text(weapon_id, level_value):
 			]
 		"shotgun", "coach_gun":
 			var bonus_pellets = 3 if weapon_id == "coach_gun" else 0
-			var pellets = 4 + level_value + bonus_pellets
-			var damage = 4 + level_value * 2 + bonus_pellets
-			var spread = int(round(rad_to_deg(0.56 + level_value * 0.025)))
+			var pellets = 6 + level_value + bonus_pellets
+			var damage = 6 + level_value * 3 + bonus_pellets
+			var spread = int(round(rad_to_deg(0.58 + level_value * 0.03)))
 			parts = [
 				_metric("damage", damage),
+				_metric("shots", 2),
 				_metric("pellets", pellets),
 				_metric("cone", "%d deg" % spread),
+				_metric("slow", "-45%"),
 				_metric("cooldown", cooldown)
 			]
 		"dynamite":
@@ -1230,8 +1296,9 @@ func _weapon_preview_text(weapon_id, level_value):
 			]
 		"fire_bottle":
 			parts = [
-				_metric("damage", 6 + level_value * 3),
-				_metric("area", int(58 + level_value * 10)),
+				_metric("damage", "%d/tick" % (3 + level_value * 2)),
+				_metric("area", int(62 + level_value * 12)),
+				_metric("duration", "%.1fs" % (3.0 + float(level_value) * 0.35)),
 				_metric("targets", _t("many")),
 				_metric("cooldown", cooldown)
 			]
@@ -1252,8 +1319,9 @@ func _weapon_preview_text(weapon_id, level_value):
 		"rifle", "rail_spike":
 			var secret_bonus = 5 if weapon_id == "rail_spike" else 0
 			parts = [
-				_metric("damage", 15 + level_value * 6 + secret_bonus),
+				_metric("damage", 18 + level_value * 5 + secret_bonus),
 				_metric("targets", 3 + level_value),
+				_metric("crit", "%d%%" % int(round((0.18 + float(level_value) * 0.045) * 100.0))),
 				_metric("speed", 1480),
 				_metric("cooldown", cooldown)
 			]
@@ -1391,6 +1459,12 @@ func _t(key):
 			return "Blades" if english else "Laminas"
 		"speed":
 			return "Speed" if english else "Veloc."
+		"slow":
+			return "Slow" if english else "Lentidao"
+		"crit":
+			return "Crit" if english else "Critico"
+		"duration":
+			return "Duration" if english else "Duracao"
 		"pickup":
 			return "Pickup" if english else "Coleta"
 		"xp_bonus":
@@ -1523,6 +1597,8 @@ func _add_weapon(weapon_id, silent):
 	weapon_levels[weapon_id] = 1
 	weapon_evolved[weapon_id] = false
 	weapon_timers[weapon_id] = rng.randf_range(0.0, 0.35)
+	if _weapon_uses_magazine(weapon_id):
+		weapon_magazine_shots_left[weapon_id] = _weapon_magazine_size(weapon_id)
 	if not silent:
 		hud.show_toast("%s: %s" % [_t("equipped_weapon"), _localized(weapons[weapon_id], "name")])
 

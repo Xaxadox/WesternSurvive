@@ -35,6 +35,9 @@ var sprite_direction_key = "down"
 var sprite_walk_cycle_seconds = 0.82
 var sprite_flip_h = false
 var sprite_side_faces_left = false
+var damage_immunities = []
+var temporary_speed_bonus = 0.0
+var temporary_speed_time = 0.0
 
 var invulnerable_time = 0.0
 var player_marker_colors = [
@@ -58,6 +61,7 @@ func configure(data, index = 0):
 	health = max_health
 	pickup_radius = float(data.get("pickup", 95.0))
 	damage_reduction = 0.0
+	damage_immunities = data.get("damage_immunities", [])
 	coat_color = data.get("coat", coat_color)
 	hat_color = data.get("hat", hat_color)
 	scarf_color = data.get("scarf", scarf_color)
@@ -82,6 +86,8 @@ func configure(data, index = 0):
 	sprite_flip_h = false
 	alive = true
 	invulnerable_time = 0.0
+	temporary_speed_bonus = 0.0
+	temporary_speed_time = 0.0
 	velocity = Vector2.ZERO
 	health_changed.emit(health, max_health)
 	queue_redraw()
@@ -92,11 +98,15 @@ func _physics_process(delta):
 		return
 
 	invulnerable_time = maxf(invulnerable_time - delta, 0.0)
+	temporary_speed_time = maxf(temporary_speed_time - delta, 0.0)
+	if temporary_speed_time <= 0.0:
+		temporary_speed_bonus = 0.0
 
 	var input_vector = _read_movement()
 	_update_aim_direction(input_vector)
+	var current_move_speed = _current_move_speed()
 	if input_vector.length() > 0.0:
-		velocity = input_vector.normalized() * move_speed
+		velocity = input_vector.normalized() * current_move_speed
 	else:
 		velocity = Vector2.ZERO
 
@@ -224,8 +234,10 @@ func _joy_direction():
 func damage(amount):
 	take_damage(amount)
 
-func take_damage(amount, _source_position = null):
+func take_damage(amount, _source_position = null, damage_kind = ""):
 	if not alive or invulnerable_time > 0.0:
+		return
+	if _immune_to_damage(damage_kind):
 		return
 
 	var final_amount = maxi(1, int(ceil(float(amount) * (1.0 - clampf(damage_reduction, 0.0, 0.85)))))
@@ -250,6 +262,22 @@ func increase_max_health(amount):
 	max_health += amount
 	health += amount
 	health_changed.emit(health, max_health)
+
+func apply_temporary_speed_bonus(amount, duration):
+	if not alive:
+		return
+	temporary_speed_bonus = maxf(temporary_speed_bonus, float(amount))
+	temporary_speed_time = maxf(temporary_speed_time, float(duration))
+
+func _current_move_speed():
+	return move_speed + temporary_speed_bonus
+
+func _immune_to_damage(damage_kind):
+	if str(damage_kind) == "":
+		return false
+	if typeof(damage_immunities) != TYPE_ARRAY:
+		return false
+	return damage_immunities.has(str(damage_kind))
 
 func _draw():
 	var blink = invulnerable_time > 0.0 and int(Time.get_ticks_msec() / 80) % 2 == 0
