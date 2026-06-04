@@ -769,16 +769,41 @@ func _schedule_next_weapon_fire(weapon_id):
 
 	weapon_magazine_shots_left[weapon_id] = _weapon_magazine_size(weapon_id)
 	weapon_timers[weapon_id] = _weapon_cooldown(weapon_id)
+	var primary_shooter = _primary_weapon_shooter(weapon_id)
+	if primary_shooter != null:
+		_on_weapon_reloading(weapon_id, primary_shooter)
 
 func _weapon_uses_magazine(weapon_id):
-	return weapon_id == "shotgun" or weapon_id == "coach_gun"
+	return weapon_id == "revolver" or weapon_id == "golden_revolver" or weapon_id == "shotgun" or weapon_id == "coach_gun"
 
-func _weapon_magazine_size(_weapon_id):
-	return 2
+func _weapon_magazine_size(weapon_id):
+	match weapon_id:
+		"revolver":
+			return 6
+		"golden_revolver":
+			return 8
+		"shotgun", "coach_gun":
+			return 2
+		_:
+			return 1
 
 func _weapon_followup_delay(weapon_id):
 	var level_value = _weapon_level(weapon_id)
-	return maxf(0.18, 0.34 - float(level_value - 1) * 0.025)
+	match weapon_id:
+		"shotgun", "coach_gun":
+			return maxf(0.52, 0.74 - float(level_value - 1) * 0.035)
+		"revolver", "golden_revolver":
+			return maxf(0.16, 0.26 - float(level_value - 1) * 0.018)
+		_:
+			return 0.25
+
+func _primary_weapon_shooter(weapon_id):
+	for current_player in _alive_players():
+		var character = _character_for_player(current_player)
+		if str(character.get("starter_weapon", "")) == weapon_id or str(character.get("synergy_weapon", "")) == weapon_id:
+			return current_player
+	var alive = _alive_players()
+	return alive[0] if not alive.is_empty() else null
 
 func _spawn_enemy(initial):
 	if enemies.get_child_count() >= _enemy_cap():
@@ -1265,8 +1290,8 @@ func _weapon_preview_text(weapon_id, level_value):
 	match weapon_id:
 		"revolver", "golden_revolver":
 			var bonus_shots = 2 if weapon_id == "golden_revolver" else 0
-			var shots = 6 + int(level_value >= 4) + bonus_shots
-			var damage = 13 + level_value * 4 + bonus_shots * 2
+			var shots = _weapon_magazine_size(weapon_id)
+			var damage = 20 + level_value * 7 + bonus_shots * 3
 			var targets = 1 + int(level_value >= 4)
 			parts = [
 				_metric("damage", damage),

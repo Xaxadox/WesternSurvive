@@ -23,11 +23,11 @@ static var FIRE_CONFIG = {
 	"rifle": {
 		"family": "rifle",
 		"color": Color("#d8e4ff"),
-		"visual": "rail"
+		"visual": "rifle_round"
 	},
 	"fire_bottle": {
 		"family": "explosive",
-		"visual": "fire"
+		"visual": "molotov"
 	},
 	"horseshoe": {
 		"family": "horseshoe"
@@ -89,29 +89,18 @@ static func _fire_revolver(context, weapon_id, shooter, color, bonus_shots):
 
 	var level_value = context._weapon_level(weapon_id)
 	var evolved = context._is_evolved(weapon_id)
-	var shots = 6 + int(level_value >= 4) + int(evolved) + bonus_shots
-	if evolved:
-		shots = maxi(shots, 8)
-
-	var damage = context._scaled_damage(13 + level_value * 4 + bonus_shots * 2, shooter)
+	var damage = context._scaled_damage(20 + level_value * 7 + bonus_shots * 3, shooter)
 	var pierce = 1 + int(level_value >= 4) + int(evolved) * 2
-	var spread = 0.15 if shots > 1 else 0.0
-
-	for i in range(shots):
-		var offset = (float(i) - float(shots - 1) / 2.0) * spread
-		context._fire_projectile(shooter, base_direction.rotated(offset), damage, 1180.0 + level_value * 32.0, pierce, 0.92, {
-			"hit_radius": 6.0,
-			"visual": "bullet",
-			"color": color,
-			"line_length": 23.0,
-			"medium_range": 520.0,
-			"far_range": 880.0,
-			"medium_damage_mult": 0.72,
-			"far_damage_mult": 0.38
-		})
-
-	if context.has_method("_on_weapon_reloading"):
-		context._on_weapon_reloading(weapon_id, shooter)
+	context._fire_projectile(shooter, base_direction, damage, 1260.0 + level_value * 34.0, pierce, 1.02, {
+		"hit_radius": 6.5,
+		"visual": "magnum",
+		"color": color,
+		"line_length": 30.0,
+		"medium_range": 520.0,
+		"far_range": 900.0,
+		"medium_damage_mult": 0.72,
+		"far_damage_mult": 0.38
+	})
 
 static func _fire_shotgun(context, weapon_id, shooter, bonus_pellets):
 	var base_direction = context._weapon_direction(weapon_id, shooter)
@@ -132,7 +121,7 @@ static func _fire_shotgun(context, weapon_id, shooter, bonus_pellets):
 			t = float(i) / float(pellets - 1) - 0.5
 		context._fire_projectile(shooter, base_direction.rotated(t * spread), damage, 930.0, pierce, 0.48, {
 			"hit_radius": 5.8,
-			"visual": "bullet",
+			"visual": "shotgun_pellet",
 			"color": Color("#f2d799"),
 			"line_length": 14.0,
 			"medium_range": 180.0,
@@ -151,7 +140,7 @@ static func _fire_explosive(context, weapon_id, shooter, visual):
 
 	var level_value = context._weapon_level(weapon_id)
 	var evolved = context._is_evolved(weapon_id)
-	var is_fire = visual == "fire"
+	var is_fire = visual == "fire" or visual == "molotov"
 	var radius = 46.0 + level_value * 10.0
 	var damage = context._scaled_damage(8 + level_value * 4, shooter)
 	var speed = 520.0 + level_value * 34.0

@@ -5,8 +5,8 @@ static var CHARACTER_DATA = [
 		"id": "gunslinger",
 		"name": "Pistoleiro",
 		"name_en": "Gunslinger",
-		"desc": "Magnum .38: seis tiros fortes e recarga acelerada por abates.",
-		"desc_en": "Magnum .38: six strong shots and kills speed up reloads.",
+		"desc": "Magnum .44: tambor de 6 balas, tiros fortes e recarga acelerada por abates.",
+		"desc_en": "Magnum .44: 6-round cylinder, strong shots, and kills speed up reloads.",
 		"starter_weapon": "revolver",
 		"synergy_weapon": "golden_revolver",
 		"synergy_desc": "Sinergia: Revolver Dourado ganha mais balas e recarga ainda mais curta.",
@@ -548,12 +548,12 @@ static var STAGE_DATA = [
 
 static var WEAPON_DATA = {
 	"revolver": {
-		"name": "Magnum .38",
-		"name_en": "Magnum .38",
-		"desc": "Seis tiros de alto dano; perde forca em longo alcance.",
-		"desc_en": "Six high-damage shots; loses power at long range.",
-		"max_bonus": "Tambor Estendido: oito tiros e mais penetracao.",
-		"max_bonus_en": "Extended Cylinder: eight shots and more penetration.",
+		"name": "Magnum .44",
+		"name_en": "Magnum .44",
+		"desc": "Tambor de 6 balas com alto dano por disparo; perde forca em longo alcance.",
+		"desc_en": "6-round cylinder with high damage per shot; loses power at long range.",
+		"max_bonus": "Tiro de Elite: mais dano e penetracao.",
+		"max_bonus_en": "Elite Shot: more damage and penetration.",
 		"cooldown": 1.62,
 		"icon": "revolver"
 	},
@@ -676,8 +676,8 @@ static var WEAPON_DATA = {
 static var UNLOCK_RULE_DATA = {
 	"ghost_town:revolver": {
 		"weapon": "golden_revolver",
-		"text": "Magnum Dourada liberada por dominar a Magnum .38 na Cidade Fantasma.",
-		"text_en": "Golden Magnum unlocked by mastering the Magnum .38 in Ghost Town."
+		"text": "Magnum Dourada liberada por dominar a Magnum .44 na Cidade Fantasma.",
+		"text_en": "Golden Magnum unlocked by mastering the Magnum .44 in Ghost Town."
 	},
 	"broken_fort:shotgun": {
 		"weapon": "coach_gun",

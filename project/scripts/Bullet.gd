@@ -4,6 +4,8 @@ var velocity = Vector2.RIGHT * 720.0
 var damage = 6
 var pierce = 1
 var lifetime = 1.6
+var initial_lifetime = 1.6
+var age = 0.0
 var hit_targets = {}
 var origin_position = Vector2.ZERO
 var source_weapon = ""
@@ -55,6 +57,8 @@ func setup(direction, amount, bullet_speed, bullet_pierce, bullet_lifetime, opti
 	damage = amount
 	pierce = bullet_pierce
 	lifetime = bullet_lifetime
+	initial_lifetime = bullet_lifetime
+	age = 0.0
 	origin_position = global_position
 	rotation = safe_direction.angle()
 	source_weapon = str(options.get("source_weapon", ""))
@@ -93,6 +97,7 @@ func setup(direction, amount, bullet_speed, bullet_pierce, bullet_lifetime, opti
 	queue_redraw()
 
 func _physics_process(delta):
+	age += delta
 	if ground_fire_active:
 		_process_ground_fire(delta)
 		return
@@ -153,7 +158,7 @@ func _handle_stage_wall(next_global_position):
 	return true
 
 func _can_ricochet():
-	return ricochet_count < max_ricochets and (visual == "bullet" or visual == "knife")
+	return ricochet_count < max_ricochets and (visual == "bullet" or visual == "magnum" or visual == "rifle_round" or visual == "shotgun_pellet" or visual == "knife")
 
 func _apply_ricochet(floor, next_global_position):
 	var current = global_position
@@ -282,6 +287,8 @@ func _start_ground_fire():
 	rotation = 0.0
 	hit_targets.clear()
 	lifetime = maxf(ground_fire_duration, 0.1)
+	initial_lifetime = lifetime
+	age = 0.0
 	hit_radius = maxf(ground_fire_radius, hit_radius)
 	_set_collision_radius(hit_radius)
 	_play_combat_sfx("explosion")
@@ -309,7 +316,19 @@ func _enemy_nodes():
 	return get_tree().get_nodes_in_group("enemies")
 
 func _draw():
+	if ground_fire_active:
+		_draw_fire()
+		return
+
 	match visual:
+		"magnum":
+			_draw_magnum_round()
+		"shotgun_pellet":
+			_draw_shotgun_pellet()
+		"rifle_round":
+			_draw_rifle_round()
+		"molotov":
+			_draw_molotov()
 		"knife":
 			_draw_knife()
 		"lasso":
@@ -334,6 +353,84 @@ func _draw():
 func _draw_bullet():
 	draw_line(Vector2(-line_length * 0.45, 0), Vector2(line_length * 0.45, 0), color, 4)
 	draw_circle(Vector2(line_length * 0.45, 0), 4, Color("#fff6cf"))
+
+func _life_ratio():
+	return clampf(lifetime / maxf(initial_lifetime, 0.001), 0.0, 1.0)
+
+func _birth_flash():
+	return clampf(1.0 - age / 0.14, 0.0, 1.0)
+
+func _draw_magnum_round():
+	var flash = _birth_flash()
+	var trail_alpha = clampf(_life_ratio() * 0.58 + flash * 0.28, 0.0, 0.82)
+	draw_line(Vector2(-line_length * 0.92, 0), Vector2(-line_length * 0.18, 0), Color(color.r, color.g, color.b, trail_alpha), 4.0)
+	draw_line(Vector2(-line_length * 0.68, 0), Vector2(line_length * 0.22, 0), Color(1.0, 0.94, 0.62, 0.38), 2.0)
+	if flash > 0.0:
+		draw_polygon(PackedVector2Array([
+			Vector2(-line_length * 0.92, 0),
+			Vector2(-line_length * 0.52, -7.0 * flash),
+			Vector2(-line_length * 0.32, 0),
+			Vector2(-line_length * 0.52, 7.0 * flash)
+		]), PackedColorArray([
+			Color(1.0, 0.76, 0.28, flash * 0.70),
+			Color(1.0, 0.88, 0.35, flash * 0.55),
+			Color(1.0, 0.95, 0.70, flash * 0.45),
+			Color(1.0, 0.48, 0.18, flash * 0.42)
+		]))
+		draw_circle(Vector2(-line_length * 0.76, -4.0), 4.0 * flash, Color(0.72, 0.68, 0.58, flash * 0.32))
+	draw_polygon(PackedVector2Array([
+		Vector2(line_length * 0.44, 0.0),
+		Vector2(line_length * 0.16, -4.0),
+		Vector2(-line_length * 0.04, -3.0),
+		Vector2(-line_length * 0.12, 0.0),
+		Vector2(-line_length * 0.04, 3.0),
+		Vector2(line_length * 0.16, 4.0)
+	]), PackedColorArray([
+		Color("#fff1a6"),
+		Color("#d7a849"),
+		Color("#9c6b2c"),
+		Color("#7a4a25"),
+		Color("#b97d32"),
+		Color("#efca68")
+	]))
+
+func _draw_shotgun_pellet():
+	var flash = _birth_flash()
+	draw_line(Vector2(-line_length * 0.92, 0), Vector2(-line_length * 0.18, 0), Color(0.82, 0.77, 0.65, 0.34 + flash * 0.26), 3.0)
+	draw_circle(Vector2(-line_length * 0.55, sin(age * 37.0) * 1.2), 2.8 + flash * 2.2, Color(0.58, 0.54, 0.46, 0.22 + flash * 0.25))
+	draw_circle(Vector2(line_length * 0.20, 0), 4.0, Color("#2b241f"))
+	draw_circle(Vector2(line_length * 0.20, -1.0), 2.0, Color("#f6e0a4"))
+
+func _draw_rifle_round():
+	var flash = _birth_flash()
+	draw_line(Vector2(-line_length * 1.12, 0), Vector2(line_length * 0.36, 0), Color(color.r, color.g, color.b, 0.46), 3.0)
+	draw_line(Vector2(-line_length * 0.88, 0), Vector2(line_length * 0.48, 0), Color(0.86, 0.96, 1.0, 0.72), 1.5)
+	if flash > 0.0:
+		draw_line(Vector2(-line_length * 1.05, -3.0), Vector2(-line_length * 0.30, 3.0), Color(0.80, 0.92, 1.0, flash * 0.42), 2.0)
+	draw_polygon(PackedVector2Array([
+		Vector2(line_length * 0.58, 0),
+		Vector2(line_length * 0.18, -3.5),
+		Vector2(-line_length * 0.05, 0),
+		Vector2(line_length * 0.18, 3.5)
+	]), PackedColorArray([Color("#f3fbff"), color, Color("#667987"), color]))
+
+func _draw_molotov():
+	var flame = 0.72 + sin(age * 24.0) * 0.20
+	draw_line(Vector2(-13, 0), Vector2(9, 0), Color("#4b2f20"), 8.0)
+	draw_line(Vector2(-9, -2), Vector2(8, -2), Color("#8a5a36"), 3.0)
+	draw_rect(Rect2(4, -4, 7, 8), Color("#2a211b"))
+	draw_polygon(PackedVector2Array([
+		Vector2(12, 0),
+		Vector2(22, -7 * flame),
+		Vector2(18, 0),
+		Vector2(23, 7 * flame)
+	]), PackedColorArray([
+		Color(1.0, 0.90, 0.22, 0.84),
+		Color(1.0, 0.28, 0.06, 0.64),
+		Color(1.0, 0.72, 0.10, 0.72),
+		Color(1.0, 0.18, 0.04, 0.52)
+	]))
+	draw_line(Vector2(-line_length * 0.90, 0), Vector2(-line_length * 0.25, 0), Color(1.0, 0.34, 0.08, 0.28), 3.0)
 
 func _draw_knife():
 	draw_polygon(PackedVector2Array([
