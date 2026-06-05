@@ -66,6 +66,8 @@ func setup(direction, amount, bullet_speed, bullet_pierce, bullet_lifetime, opti
 	source_shooter = options.get("source_shooter", null)
 	damage_kind = str(options.get("damage_kind", ""))
 	visual = options.get("visual", visual)
+	if visual == "molotov":
+		rotation = 0.0
 	color = options.get("color", color)
 	line_length = float(options.get("line_length", line_length))
 	hit_radius = float(options.get("hit_radius", hit_radius))
@@ -111,7 +113,7 @@ func _physics_process(delta):
 
 	if spin_speed != 0.0:
 		rotation += spin_speed * delta
-	elif velocity.length() > 0.0:
+	elif velocity.length() > 0.0 and visual != "molotov":
 		rotation = velocity.angle()
 
 	lifetime -= delta
@@ -415,22 +417,52 @@ func _draw_rifle_round():
 	]), PackedColorArray([Color("#f3fbff"), color, Color("#667987"), color]))
 
 func _draw_molotov():
-	var flame = 0.72 + sin(age * 24.0) * 0.20
-	draw_line(Vector2(-13, 0), Vector2(9, 0), Color("#4b2f20"), 8.0)
-	draw_line(Vector2(-9, -2), Vector2(8, -2), Color("#8a5a36"), 3.0)
-	draw_rect(Rect2(4, -4, 7, 8), Color("#2a211b"))
+	var progress = clampf(age / maxf(initial_lifetime, 0.001), 0.0, 1.0)
+	var impact = clampf((progress - 0.70) / 0.30, 0.0, 1.0)
+	var drop_height = lerpf(34.0, 3.0, progress) + sin(age * 18.0) * 2.0
+	var travel = velocity.normalized()
+	if travel == Vector2.ZERO:
+		travel = Vector2.RIGHT
+	var back = -travel
+	var flame_origin = Vector2(0.0, -drop_height)
+	var shadow_size = lerpf(5.0, 18.0, progress)
+	var flicker = 0.78 + sin(age * 28.0) * 0.18
+
+	draw_circle(Vector2(0.0, 10.0), shadow_size, Color(0.08, 0.04, 0.02, 0.20 + progress * 0.12))
+	for i in range(4):
+		var ember_progress = float(i) / 3.0
+		var ember_pos = flame_origin + back * (10.0 + ember_progress * 24.0) + Vector2(sin(age * 11.0 + ember_progress * 5.0) * 3.0, -ember_progress * 6.0)
+		var ember_alpha = 0.50 * (1.0 - ember_progress) * (1.0 - impact * 0.45)
+		draw_circle(ember_pos, 2.5 - ember_progress * 0.8, Color(1.0, 0.48, 0.08, ember_alpha))
+
+	draw_line(flame_origin + back * 18.0, flame_origin + back * 4.0, Color(1.0, 0.30, 0.05, 0.28), 5.0)
 	draw_polygon(PackedVector2Array([
-		Vector2(12, 0),
-		Vector2(22, -7 * flame),
-		Vector2(18, 0),
-		Vector2(23, 7 * flame)
+		flame_origin + Vector2(0.0, -10.0 * flicker),
+		flame_origin + Vector2(8.0, -1.0),
+		flame_origin + Vector2(3.0, 9.0 + impact * 4.0),
+		flame_origin + Vector2(-7.0, 4.0)
 	]), PackedColorArray([
-		Color(1.0, 0.90, 0.22, 0.84),
-		Color(1.0, 0.28, 0.06, 0.64),
-		Color(1.0, 0.72, 0.10, 0.72),
-		Color(1.0, 0.18, 0.04, 0.52)
+		Color(1.0, 0.88, 0.22, 0.90),
+		Color(1.0, 0.34, 0.06, 0.78),
+		Color(1.0, 0.17, 0.03, 0.70),
+		Color(1.0, 0.56, 0.08, 0.74)
 	]))
-	draw_line(Vector2(-line_length * 0.90, 0), Vector2(-line_length * 0.25, 0), Color(1.0, 0.34, 0.08, 0.28), 3.0)
+	draw_polygon(PackedVector2Array([
+		flame_origin + Vector2(0.0, -5.5 * flicker),
+		flame_origin + Vector2(4.0, 0.0),
+		flame_origin + Vector2(0.5, 5.0),
+		flame_origin + Vector2(-4.0, 1.0)
+	]), PackedColorArray([
+		Color(1.0, 0.98, 0.58, 0.92),
+		Color(1.0, 0.76, 0.14, 0.86),
+		Color(1.0, 0.42, 0.06, 0.70),
+		Color(1.0, 0.84, 0.24, 0.80)
+	]))
+
+	if impact > 0.0:
+		var splash_radius = lerpf(5.0, 22.0, impact)
+		draw_circle(Vector2.ZERO, splash_radius, Color(1.0, 0.18, 0.03, 0.16 * impact))
+		draw_arc(Vector2.ZERO, splash_radius, -0.15 * PI, 1.15 * PI, 18, Color(1.0, 0.64, 0.08, 0.48 * impact), 3.0)
 
 func _draw_knife():
 	draw_polygon(PackedVector2Array([
@@ -452,9 +484,26 @@ func _draw_dynamite():
 
 func _draw_fire():
 	if ground_fire_active:
-		draw_circle(Vector2.ZERO, hit_radius, Color(1.0, 0.20, 0.05, 0.18))
-		draw_circle(Vector2.ZERO, hit_radius * 0.58, Color(1.0, 0.48, 0.08, 0.30))
-		draw_circle(Vector2(6, -4), maxf(hit_radius * 0.22, 8.0), Color(1.0, 0.84, 0.22, 0.52))
+		var pulse = 0.86 + sin(age * 10.0) * 0.08
+		draw_circle(Vector2.ZERO, hit_radius * pulse, Color(1.0, 0.20, 0.05, 0.18))
+		draw_circle(Vector2.ZERO, hit_radius * 0.58, Color(1.0, 0.48, 0.08, 0.28))
+		for i in range(5):
+			var angle = float(i) / 5.0 * TAU + age * 0.9
+			var radius = hit_radius * (0.18 + 0.28 * float(i % 3) / 2.0)
+			var flame_pos = Vector2(cos(angle), sin(angle)) * radius
+			var flame_height = maxf(hit_radius * (0.16 + 0.04 * sin(age * 8.0 + float(i))), 7.0)
+			draw_polygon(PackedVector2Array([
+				flame_pos + Vector2(0.0, -flame_height),
+				flame_pos + Vector2(flame_height * 0.38, 0.0),
+				flame_pos + Vector2(0.0, flame_height * 0.28),
+				flame_pos + Vector2(-flame_height * 0.36, 0.0)
+			]), PackedColorArray([
+				Color(1.0, 0.88, 0.18, 0.56),
+				Color(1.0, 0.32, 0.05, 0.44),
+				Color(1.0, 0.18, 0.03, 0.36),
+				Color(1.0, 0.58, 0.07, 0.42)
+			]))
+		draw_circle(Vector2(6, -4), maxf(hit_radius * 0.20, 8.0), Color(1.0, 0.84, 0.22, 0.45))
 		return
 	draw_circle(Vector2.ZERO, maxf(hit_radius * 0.65, 7.0), Color(1.0, 0.26, 0.08, 0.55))
 	draw_circle(Vector2(3, -2), maxf(hit_radius * 0.35, 5.0), Color(1.0, 0.82, 0.22, 0.75))
