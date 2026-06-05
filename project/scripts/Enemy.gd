@@ -34,6 +34,7 @@ var sprite_facing = Vector2.DOWN
 var sprite_direction_key = "down"
 var sprite_walk_cycle_seconds = 0.78
 var sprite_flip_h = false
+static var sprite_flip_cache = {}
 
 var attack_cooldown = 0.0
 
@@ -105,7 +106,7 @@ func _physics_process(delta):
 			attack_cooldown = attack_delay
 	_update_sprite_animation(delta, direction)
 	_apply_player_soft_collision(target)
-	if sprite_texture != null:
+	if sprite_texture != null or not sprite_animations.is_empty() or not sprite_walk_textures.is_empty():
 		queue_redraw()
 
 func _update_sprite_animation(delta, direction):
@@ -272,6 +273,9 @@ func _animation_frame(key, moving):
 	return frames[index]
 
 func _draw_sprite(texture, height, offset, modulate):
+	var draw_texture = texture
+	if sprite_direction_key == "side" and sprite_flip_h:
+		draw_texture = _flipped_sprite_texture(texture)
 	var aspect = float(texture.get_width()) / float(maxi(texture.get_height(), 1))
 	var size = Vector2(height * aspect, height)
 	var moving = velocity.length() > 1.0
@@ -285,8 +289,20 @@ func _draw_sprite(texture, height, offset, modulate):
 		rotation = sin(phase) * 0.022 * lean_sign if moving else sin(idle_phase) * 0.008
 		var pulse = absf(sin(phase)) if moving else 0.0
 		draw_scale = Vector2(1.0 + pulse * 0.012, 1.0 - pulse * 0.008)
-	if sprite_direction_key == "side" and sprite_flip_h:
-		draw_scale.x *= -1.0
 	draw_set_transform(offset + Vector2(0, bob), rotation, draw_scale)
-	draw_texture_rect(texture, Rect2(-size * 0.5, size), false, modulate)
+	draw_texture_rect(draw_texture, Rect2(-size * 0.5, size), false, modulate)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+func _flipped_sprite_texture(texture):
+	if texture == null:
+		return null
+	var key = str(texture.get_instance_id())
+	if sprite_flip_cache.has(key):
+		return sprite_flip_cache[key]
+	var image = texture.get_image()
+	if image == null or image.is_empty():
+		return texture
+	image.flip_x()
+	var flipped = ImageTexture.create_from_image(image)
+	sprite_flip_cache[key] = flipped
+	return flipped

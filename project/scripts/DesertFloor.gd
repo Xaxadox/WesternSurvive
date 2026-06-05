@@ -3,6 +3,7 @@ extends Node2D
 const MINE_CELL_SIZE = 288
 const MINE_CORRIDOR_HALF_WIDTH = 36.0
 const MINE_WALKABLE_PADDING = 20.0
+const TERRAIN_SCATTER_STEP = 96
 
 var player = null
 var tile_size = 96
@@ -56,18 +57,123 @@ func _draw():
 	var end_y = int(ceil(area.end.y / tile_size) * tile_size)
 	var grid_color = stage_data.get("grid", Color(0.55, 0.31, 0.15, 0.12))
 
-	for x in range(start_x, end_x + tile_size, tile_size):
-		draw_line(Vector2(x, start_y), Vector2(x, end_y), grid_color, 1.0)
+	_draw_stage_ground_detail(stage_id, area, start_x, end_x, start_y, end_y)
+	_draw_stage_grid(stage_id, start_x, end_x, start_y, end_y, grid_color)
 
-	for y in range(start_y, end_y + tile_size, tile_size):
-		draw_line(Vector2(start_x, y), Vector2(end_x, y), grid_color, 1.0)
-
-	var prop_step = tile_size * 3
+	var prop_step = tile_size * 2
 	for x in range(start_x, end_x + prop_step, prop_step):
 		for y in range(start_y, end_y + prop_step, prop_step):
 			var hash = _cell_hash(x, y) % 23
 			var offset = Vector2((hash % 5) * 9 - 18, (hash % 7) * 7 - 21)
 			_draw_stage_prop(Vector2(x, y) + offset, hash)
+
+func _draw_stage_grid(stage_id, start_x, end_x, start_y, end_y, grid_color):
+	match stage_id:
+		"ghost_town":
+			for y in range(start_y, end_y + tile_size * 2, tile_size * 2):
+				draw_line(Vector2(start_x, y), Vector2(end_x, y), _alpha(grid_color, 0.28), 1.0)
+			for x in range(start_x, end_x + tile_size * 2, tile_size * 2):
+				draw_line(Vector2(x, start_y), Vector2(x, end_y), _alpha(grid_color, 0.18), 1.0)
+		"canyon":
+			var band_step = tile_size
+			for y in range(start_y - band_step * 4, end_y + band_step * 4, band_step):
+				var wave = sin(float(y) * 0.004) * 34.0
+				draw_line(Vector2(start_x - band_step, y + wave), Vector2(end_x + band_step, y + wave + 76.0), _alpha(grid_color, 0.60), 2.0)
+				draw_line(Vector2(start_x - band_step, y + wave + 18.0), Vector2(end_x + band_step, y + wave + 94.0), _alpha(grid_color, 0.26), 1.0)
+		"broken_fort":
+			for x in range(start_x, end_x + tile_size, tile_size):
+				draw_line(Vector2(x, start_y), Vector2(x, end_y), _alpha(grid_color, 0.35), 1.0)
+			for y in range(start_y, end_y + tile_size * 2, tile_size * 2):
+				draw_line(Vector2(start_x, y), Vector2(end_x, y), _alpha(grid_color, 0.45), 1.0)
+		"bonus":
+			for x in range(start_x, end_x + tile_size * 3, tile_size * 3):
+				draw_line(Vector2(x, start_y), Vector2(x, end_y), Color(0.88, 0.76, 0.24, 0.16), 1.0)
+			for y in range(start_y, end_y + tile_size * 3, tile_size * 3):
+				draw_line(Vector2(start_x, y), Vector2(end_x, y), Color(0.28, 0.82, 0.86, 0.10), 1.0)
+		_:
+			for x in range(start_x, end_x + tile_size, tile_size):
+				draw_line(Vector2(x, start_y), Vector2(x, end_y), grid_color, 1.0)
+			for y in range(start_y, end_y + tile_size, tile_size):
+				draw_line(Vector2(start_x, y), Vector2(end_x, y), grid_color, 1.0)
+
+func _draw_stage_ground_detail(stage_id, area, start_x, end_x, start_y, end_y):
+	match stage_id:
+		"ghost_town":
+			_draw_ghost_town_ground(area, start_x, end_x, start_y, end_y)
+		"canyon":
+			_draw_canyon_ground(start_x, end_x, start_y, end_y)
+		"broken_fort":
+			_draw_broken_fort_ground(start_x, end_x, start_y, end_y)
+		"bonus":
+			_draw_bonus_ground(start_x, end_x, start_y, end_y)
+		_:
+			_draw_sparse_dust(start_x, end_x, start_y, end_y, Color(0.24, 0.12, 0.05, 0.12))
+
+func _draw_ghost_town_ground(area, start_x, end_x, start_y, end_y):
+	var road = Color(0.58, 0.34, 0.16, 0.18)
+	var track = Color(0.34, 0.18, 0.09, 0.25)
+	for y in range(start_y - tile_size * 2, end_y + tile_size * 2, tile_size * 4):
+		draw_rect(Rect2(Vector2(start_x, y + 24), Vector2(end_x - start_x, tile_size * 1.55)), road)
+		draw_line(Vector2(start_x, y + 54), Vector2(end_x, y + 54), track, 2.0)
+		draw_line(Vector2(start_x, y + 116), Vector2(end_x, y + 116), track, 2.0)
+	for x in range(start_x - tile_size * 2, end_x + tile_size * 2, tile_size * 5):
+		draw_rect(Rect2(Vector2(x + 16, area.position.y), Vector2(tile_size * 0.78, area.size.y)), Color(0.82, 0.63, 0.37, 0.10))
+		draw_line(Vector2(x + 18, start_y), Vector2(x + 18, end_y), Color(0.44, 0.24, 0.12, 0.16), 1.0)
+		draw_line(Vector2(x + 76, start_y), Vector2(x + 76, end_y), Color(0.44, 0.24, 0.12, 0.16), 1.0)
+	_draw_sparse_dust(start_x, end_x, start_y, end_y, Color(0.29, 0.15, 0.07, 0.18))
+
+func _draw_canyon_ground(start_x, end_x, start_y, end_y):
+	for x in range(start_x, end_x + TERRAIN_SCATTER_STEP, TERRAIN_SCATTER_STEP):
+		for y in range(start_y, end_y + TERRAIN_SCATTER_STEP, TERRAIN_SCATTER_STEP):
+			var hash = _cell_hash(x, y)
+			if hash % 7 == 0:
+				var pos = Vector2(x + hash % 43, y + int(hash / 11) % 41)
+				var crack = Color(0.17, 0.06, 0.035, 0.32)
+				draw_line(pos, pos + Vector2(26, -14), crack, 2.0)
+				draw_line(pos + Vector2(13, -7), pos + Vector2(4, -28), crack, 1.0)
+				draw_line(pos + Vector2(15, -6), pos + Vector2(32, 10), crack, 1.0)
+			elif hash % 13 == 0:
+				var center = Vector2(x + 28, y + 18)
+				draw_arc(center, 20.0 + float(hash % 12), 0.2, PI * 1.35, 18, Color(0.92, 0.62, 0.34, 0.16), 1.0)
+
+func _draw_broken_fort_ground(start_x, end_x, start_y, end_y):
+	var plank_fill = Color(0.38, 0.24, 0.13, 0.12)
+	var plank_edge = Color(0.16, 0.10, 0.06, 0.24)
+	for x in range(start_x - tile_size, end_x + tile_size, tile_size * 2):
+		for y in range(start_y - tile_size, end_y + tile_size, tile_size * 2):
+			var hash = _cell_hash(x, y)
+			if hash % 5 <= 2:
+				var rect = Rect2(Vector2(x + 10, y + 12), Vector2(tile_size * 1.55, tile_size * 0.58))
+				draw_rect(rect, plank_fill)
+				draw_line(rect.position + Vector2(0, 8), rect.end - Vector2(0, rect.size.y - 8), plank_edge, 1.0)
+				draw_line(rect.position + Vector2(0, rect.size.y - 8), rect.end - Vector2(0, 8), plank_edge, 1.0)
+			if hash % 11 == 0:
+				var nail = Vector2(x + 25 + hash % 34, y + 24 + int(hash / 9) % 34)
+				draw_circle(nail, 2.0, Color(0.10, 0.07, 0.045, 0.34))
+	_draw_sparse_dust(start_x, end_x, start_y, end_y, Color(0.22, 0.13, 0.07, 0.16))
+
+func _draw_bonus_ground(start_x, end_x, start_y, end_y):
+	for y in range(start_y - tile_size * 4, end_y + tile_size * 4, tile_size * 4):
+		draw_line(Vector2(start_x, y), Vector2(end_x, y + 84), Color(0.95, 0.75, 0.25, 0.36), 3.0)
+		draw_line(Vector2(start_x, y + 16), Vector2(end_x, y + 100), Color(0.22, 0.86, 0.88, 0.22), 2.0)
+		for x in range(start_x, end_x + tile_size * 3, tile_size * 3):
+			var pos = Vector2(x, y + (x - start_x) * 0.035)
+			draw_circle(pos, 7.0, Color(0.95, 0.75, 0.25, 0.18))
+			draw_circle(pos, 3.0, Color(0.95, 0.75, 0.25, 0.56))
+	for x in range(start_x, end_x + TERRAIN_SCATTER_STEP, TERRAIN_SCATTER_STEP):
+		for y in range(start_y, end_y + TERRAIN_SCATTER_STEP, TERRAIN_SCATTER_STEP):
+			if _cell_hash(x, y) % 17 == 0:
+				draw_arc(Vector2(x + 34, y + 28), 18.0, -0.4, PI * 1.4, 20, Color(0.64, 0.54, 0.92, 0.24), 1.0)
+
+func _draw_sparse_dust(start_x, end_x, start_y, end_y, color):
+	for x in range(start_x, end_x + TERRAIN_SCATTER_STEP, TERRAIN_SCATTER_STEP):
+		for y in range(start_y, end_y + TERRAIN_SCATTER_STEP, TERRAIN_SCATTER_STEP):
+			var hash = _cell_hash(x, y)
+			if hash % 4 != 0:
+				continue
+			var pos = Vector2(x + hash % 53, y + int(hash / 7) % 47)
+			var radius = 1.4 + float(hash % 5) * 0.45
+			draw_circle(pos, radius, color)
 
 func _draw_mine_layout(area):
 	var start_x = int(floor(area.position.x / MINE_CELL_SIZE)) - 1
@@ -78,6 +184,8 @@ func _draw_mine_layout(area):
 	var tunnel = Color("#675646")
 	var chamber = Color("#735f4d")
 	var chamber_light = Color("#816c57")
+
+	_draw_mine_rock_noise(area)
 
 	for cell_x in range(start_x, end_x + 1):
 		for cell_y in range(start_y, end_y + 1):
@@ -97,6 +205,7 @@ func _draw_mine_layout(area):
 			draw_circle(center, room_radius, chamber)
 			draw_circle(center + Vector2(-room_radius * 0.18, -room_radius * 0.12), room_radius * 0.66, chamber_light)
 			_draw_mine_wall_marks(center, room_radius, hash)
+			_draw_mine_supports(center, room_radius, hash)
 			if hash % 4 == 0:
 				if not _draw_stage_texture_prop("lantern", center + Vector2(18, -16), 58.0):
 					_draw_lantern(center + Vector2(18, -16))
@@ -111,6 +220,11 @@ func _draw_mine_corridor(a, b, shadow, color):
 	draw_line(a, b, shadow, MINE_CORRIDOR_HALF_WIDTH * 2.6)
 	draw_line(a, b, color.darkened(0.08), MINE_CORRIDOR_HALF_WIDTH * 2.1)
 	draw_line(a, b, color, MINE_CORRIDOR_HALF_WIDTH * 1.55)
+	var direction = (b - a).normalized()
+	var normal = Vector2(-direction.y, direction.x)
+	for i in range(1, 4):
+		var point = a.lerp(b, float(i) / 4.0)
+		draw_line(point - normal * 24.0, point + normal * 24.0, Color(0.22, 0.14, 0.08, 0.55), 3.0)
 
 func _draw_mine_wall_marks(center, radius, hash):
 	var wall = Color(0.08, 0.06, 0.045, 0.35)
@@ -119,6 +233,34 @@ func _draw_mine_wall_marks(center, radius, hash):
 		var start = center + Vector2(cos(angle), sin(angle)) * (radius * 0.76)
 		var end = center + Vector2(cos(angle + 0.28), sin(angle + 0.28)) * (radius * 1.08)
 		draw_line(start, end, wall, 2.0)
+
+func _draw_mine_supports(center, radius, hash):
+	if hash % 3 != 0:
+		return
+	var wood = Color(0.24, 0.14, 0.08, 0.78)
+	var dark = Color(0.06, 0.04, 0.03, 0.42)
+	var left = center + Vector2(-radius * 0.58, -radius * 0.32)
+	var right = center + Vector2(radius * 0.58, -radius * 0.32)
+	draw_line(left + Vector2(2, 4), left + Vector2(2, radius * 0.48), dark, 7.0)
+	draw_line(right + Vector2(2, 4), right + Vector2(2, radius * 0.48), dark, 7.0)
+	draw_line(left, right, dark, 8.0)
+	draw_line(left, left + Vector2(0, radius * 0.48), wood, 5.0)
+	draw_line(right, right + Vector2(0, radius * 0.48), wood, 5.0)
+	draw_line(left, right, wood.lightened(0.08), 5.0)
+
+func _draw_mine_rock_noise(area):
+	var start_x = int(floor(area.position.x / TERRAIN_SCATTER_STEP) * TERRAIN_SCATTER_STEP)
+	var end_x = int(ceil(area.end.x / TERRAIN_SCATTER_STEP) * TERRAIN_SCATTER_STEP)
+	var start_y = int(floor(area.position.y / TERRAIN_SCATTER_STEP) * TERRAIN_SCATTER_STEP)
+	var end_y = int(ceil(area.end.y / TERRAIN_SCATTER_STEP) * TERRAIN_SCATTER_STEP)
+	for x in range(start_x, end_x + TERRAIN_SCATTER_STEP, TERRAIN_SCATTER_STEP):
+		for y in range(start_y, end_y + TERRAIN_SCATTER_STEP, TERRAIN_SCATTER_STEP):
+			var hash = _cell_hash(x, y)
+			var pos = Vector2(x + hash % 61, y + int(hash / 13) % 59)
+			if hash % 5 == 0:
+				draw_line(pos, pos + Vector2(22, -10), Color(0.46, 0.38, 0.30, 0.15), 2.0)
+			elif hash % 7 == 0:
+				draw_circle(pos, 2.0 + float(hash % 4), Color(0.78, 0.64, 0.42, 0.10))
 
 func is_mine_walkable(position):
 	if stage_data.get("id", "ghost_town") != "mine":
@@ -230,6 +372,11 @@ func _closest_point_on_segment(point, a, b):
 
 func _cell_hash(x, y):
 	return int(abs(sin(float(x) * 12.9898 + float(y) * 78.233)) * 100000.0)
+
+func _alpha(color, amount):
+	var result = color
+	result.a = amount
+	return result
 
 func _load_stage_prop_textures(props):
 	var result = {}
