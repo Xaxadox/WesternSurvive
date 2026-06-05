@@ -59,6 +59,8 @@ static func fire(context, weapon_id, shooter):
 	if config.is_empty():
 		return
 
+	if shooter.has_method("play_fire_animation"):
+		shooter.play_fire_animation()
 	context.firing_weapon_context = weapon_id
 	_fire_from_config(context, weapon_id, shooter, config)
 	context.firing_weapon_context = ""

@@ -39,6 +39,8 @@ static var sprite_flip_cache = {}
 var damage_immunities = []
 var temporary_speed_bonus = 0.0
 var temporary_speed_time = 0.0
+var fire_anim_timer = 0.0
+const FIRE_ANIM_DURATION = 0.15
 
 var invulnerable_time = 0.0
 var player_marker_colors = [
@@ -99,6 +101,7 @@ func _physics_process(delta):
 		return
 
 	invulnerable_time = maxf(invulnerable_time - delta, 0.0)
+	fire_anim_timer = maxf(fire_anim_timer - delta, 0.0)
 	temporary_speed_time = maxf(temporary_speed_time - delta, 0.0)
 	if temporary_speed_time <= 0.0:
 		temporary_speed_bonus = 0.0
@@ -269,6 +272,10 @@ func apply_temporary_speed_bonus(amount, duration):
 		return
 	temporary_speed_bonus = maxf(temporary_speed_bonus, float(amount))
 	temporary_speed_time = maxf(temporary_speed_time, float(duration))
+
+func play_fire_animation():
+	fire_anim_timer = FIRE_ANIM_DURATION
+	queue_redraw()
 
 func _current_move_speed():
 	return move_speed + temporary_speed_bonus
@@ -460,37 +467,75 @@ func _draw_weapon(direction):
 	if dir == Vector2.ZERO:
 		dir = Vector2.RIGHT
 	var side = Vector2(-dir.y, dir.x)
+	var flash_strength = clampf(fire_anim_timer / FIRE_ANIM_DURATION, 0.0, 1.0) if FIRE_ANIM_DURATION > 0.0 else 0.0
+	var draw_flash = flash_strength > 0.58
+	var recoil_scale = 1.0
+	match weapon_visual:
+		"shotgun":
+			recoil_scale = 1.45
+		"rifle":
+			recoil_scale = 1.18
+		"lantern":
+			recoil_scale = 0.42
+		_:
+			recoil_scale = 1.0
+	var recoil_offset = -dir * (8.0 * recoil_scale * flash_strength)
 
 	match weapon_visual:
 		"shotgun":
-			var start = dir * 9.0 - side * 3.0
-			var end = dir * 36.0 - side * 3.0
+			var start = dir * 9.0 - side * 3.0 + recoil_offset
+			var end = dir * 36.0 - side * 3.0 + recoil_offset
 			draw_line(start, end, Color("#24160e"), 6)
 			draw_line(start + side * 3.0, end + side * 3.0, Color("#6e4a2d"), 3)
 			draw_line(start - dir * 5.0, start - side * 8.0, Color("#3a2416"), 5)
 			draw_circle(end, 3, Color("#f0c95a"))
+			if draw_flash:
+				_draw_muzzle_flash(end + dir * 3.0, dir, side, flash_strength, 1.55)
 		"rifle":
-			var start = dir * 8.0 + side * 2.0
-			var end = dir * 41.0 + side * 2.0
+			var start = dir * 8.0 + side * 2.0 + recoil_offset
+			var end = dir * 41.0 + side * 2.0 + recoil_offset
 			draw_line(start, end, Color("#2b1b13"), 4)
 			draw_line(start + side * 3.0, end + side * 3.0, Color("#a46d38"), 2)
 			draw_line(start - dir * 4.0, start - side * 7.0, Color("#3a2416"), 4)
 			draw_circle(end, 2.5, Color("#d8e4ff"))
+			if draw_flash:
+				_draw_muzzle_flash(end + dir * 3.0, dir, side, flash_strength, 1.12)
 		"lantern":
-			var staff_start = -dir * 3.0 - side * 10.0
-			var staff_end = dir * 22.0 - side * 10.0
-			var lamp = dir * 27.0 - side * 4.0
+			var swing_offset = side * sin(fire_anim_timer * TAU * 4.0) * 5.0 * flash_strength
+			var staff_start = -dir * 3.0 - side * 10.0 + swing_offset
+			var staff_end = dir * 22.0 - side * 10.0 + swing_offset
+			var lamp = dir * 27.0 - side * 4.0 + swing_offset
 			draw_line(staff_start, staff_end, Color("#3a2618"), 4)
 			draw_line(staff_end, lamp, Color("#3a2618"), 3)
-			draw_circle(lamp, 9, Color(0.61, 0.91, 0.83, 0.25))
-			draw_circle(lamp, 5, Color("#9be8d4"))
+			draw_circle(lamp, 9 + flash_strength * 5.0, Color(0.61, 0.91, 0.83, 0.25 + flash_strength * 0.30))
+			draw_circle(lamp, 5 + flash_strength * 1.8, Color("#ffffff") if draw_flash else Color("#9be8d4"))
 			draw_rect(Rect2(lamp.x - 4, lamp.y - 8, 8, 4), Color("#2a332d"))
 		_:
-			var gun_start = dir * 10.0
-			var gun_end = dir * 28.0
+			var gun_start = dir * 10.0 + recoil_offset
+			var gun_end = dir * 28.0 + recoil_offset
 			draw_line(gun_start, gun_end, Color("#21160f"), 4)
 			draw_line(gun_start - side * 2.0, gun_start - side * 7.0, Color("#3a2416"), 3)
 			draw_circle(gun_end, 3, Color("#d7b46a"))
+			if draw_flash:
+				_draw_muzzle_flash(gun_end + dir * 2.0, dir, side, flash_strength, 0.92)
+
+func _draw_muzzle_flash(pos, dir, side, strength, scale_mult):
+	var alpha = clampf(strength, 0.0, 1.0)
+	var length = 12.0 * scale_mult * (0.72 + alpha * 0.28)
+	var width = 6.0 * scale_mult * (0.70 + alpha * 0.30)
+	var points = PackedVector2Array([
+		pos + dir * length,
+		pos + dir * (length * 0.36) + side * width,
+		pos - dir * (1.0 * scale_mult),
+		pos + dir * (length * 0.36) - side * width
+	])
+	draw_polygon(points, PackedColorArray([
+		Color(1.0, 0.98, 0.58, alpha),
+		Color(1.0, 0.78, 0.22, alpha * 0.82),
+		Color(0.86, 0.29, 0.12, alpha * 0.62),
+		Color(1.0, 0.78, 0.22, alpha * 0.82)
+	]))
+	draw_circle(pos + dir * (length * 0.32), 2.2 * scale_mult, Color(1.0, 0.96, 0.72, alpha * 0.75))
 
 func _draw_star(center, radius, color):
 	var points = PackedVector2Array()
